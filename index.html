@@ -1,0 +1,2172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Analiz Pro v22.9 (Son İki Kelime ile Akıllı Eşleştirme & Çoklu Döküm)</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #2563eb; --secondary: #475569; --success: #16a34a;
+            --warning: #ca8a04; --danger: #dc2626; --light: #f8fafc;
+            --dark: #1e293b; --border: #e2e8f0; --info-bg: #e0f2fe; --info-text: #0369a1;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; margin: 0; background: #f1f5f9; color: #334155; height: 100vh; display: flex; flex-direction: column; }
+
+        /* HEADER */
+        header { background: var(--dark); color: white; padding: 0 1.5rem; height: 60px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0; }
+        header h1 { margin: 0; font-size: 1.3rem; font-weight: 500; }
+        .badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.15); }
+
+        /* MAIN LAYOUT */
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 240px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; position: relative; display: flex; flex-direction: column; }
+
+        /* TABS */
+        .tab-btn { padding: 15px 20px; text-align: left; background: none; border: none; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 0.95rem; color: var(--secondary); display: flex; align-items: center; gap: 10px; transition: 0.2s; width: 100%; }
+        .tab-btn:hover { background: #f8fafc; color: var(--primary); }
+        .tab-btn.active { background: #eff6ff; color: var(--primary); border-left: 4px solid var(--primary); font-weight: 500; }
+        .tab-content { display: none; animation: fadeIn 0.3s; flex: 1;}
+        .tab-content.active { display: block; }
+        
+        /* HELP INFO */
+        .help-btn { cursor: pointer; color: var(--primary); font-size: 0.9rem; background: none; border: none; margin-left: auto; }
+        .help-content { display: none; background-color: var(--info-bg); color: var(--info-text); padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; border-left: 4px solid var(--primary); line-height: 1.4; }
+
+        /* UI ELEMENTS */
+        .card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .card h3 { margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.1rem; color: var(--dark); display: flex; align-items: center; justify-content: space-between; }
+        
+        /* TABLES */
+        .table-wrapper { overflow-x: auto; max-height: 500px; border: 1px solid var(--border); border-radius: 6px; background: white; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th { background: var(--secondary); color: white; padding: 8px 10px; text-align: left; position: sticky; top: 0; z-index: 10; white-space: nowrap; }
+        td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:nth-child(even) { background: #f8fafc; }
+        tr:hover { background: #e2e8f0; }
+        
+        .row-total { background-color: #cbd5e1 !important; font-weight: bold; color: #1e293b; border-top: 2px solid #94a3b8; }
+        .row-others { background-color: #f1f5f9 !important; font-style: italic; color: #64748b; font-weight: 500; }
+        .month-col { border-left: 2px solid #cbd5e1; }
+
+        /* FORMS */
+        select, input[type="text"], input[type="number"] { padding: 8px; border: 1px solid var(--border); border-radius: 4px; width: 100%; margin-bottom: 10px; }
+        select[multiple] { height: 100px; } 
+        label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 0.85rem; color: var(--secondary); }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; color: white; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-primary { background: var(--primary); } 
+        .btn-secondary { background: var(--secondary); }
+        .btn-success { background: var(--success); } 
+        .btn-warning { background: var(--warning); }
+        .btn-danger { background: var(--danger); }
+        .btn-info { background: #0ea5e9; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background: #eff6ff; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+        .btn-dim { background: #94a3b8; font-size: 0.8rem; padding: 6px 12px; }
+        .btn-dim:hover { background: #64748b; }
+
+        /* MODALS & GRID */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; width: 600px; max-height: 80vh; border-radius: 8px; display: flex; flex-direction: column; padding:0; }
+        .modal-body { padding: 15px; overflow-y: auto; flex: 1; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .toggle-switch { display: flex; align-items: center; gap: 10px; background: #e0f2fe; padding: 10px; border-radius: 6px; margin-bottom: 15px; color: #0369a1; }
+        .toggle-switch input { width: auto; margin: 0; }
+        
+        /* REPEATED SECTION UI */
+        .rep-container { display: flex; gap: 20px; height: 400px; }
+        .rep-left { flex: 1; display: flex; flex-direction: column; }
+        .rep-right { flex: 1; display: flex; flex-direction: column; }
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 10px; background: #fff; border-radius: 6px; flex: 1; }
+        .cb-item { display: flex; align-items: center; padding: 8px; font-size: 0.85rem; border: 1px solid #f1f5f9; border-radius: 4px; transition: 0.2s; }
+        .cb-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .cb-item input { width: auto; margin: 0 8px 0 0; cursor: pointer; }
+        .cb-item label { margin: 0; cursor: pointer; color: #334155; font-weight: 500; }
+
+        /* QUEUE CHIPS */
+        .q-chip { background: white; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .q-chip .del { color: #ef4444; cursor: pointer; font-weight: bold; }
+        .q-chip:hover { border-color: var(--primary); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+ 
+<header>
+    <h1><span>📊 Master Analiz Pro v22.9</span></h1>
+    <div>
+        <span id="globalStatus" class="badge">Son 2 Kelime Eşleştirme Motoru Aktif</span>
+        <button class="btn btn-warning btn-sm" onclick="saveState()">💾 Ayarları Kaydet</button>
+    </div>
+</header>
+ 
+<div class="main-container">
+    <aside class="sidebar">
+        <button class="tab-btn active" onclick="switchTab('tab-upload')">📁 Dosya Yönetimi</button>
+        <button class="tab-btn" onclick="switchTab('tab-data')">🔍 Veri ve Filtreleme</button>
+        <button class="tab-btn" onclick="switchTab('tab-analysis')">📈 Genel Analiz</button>
+        <button class="tab-btn" onclick="switchTab('tab-radiology')">🏥 Hasta Başı Rapor</button>
+        <button class="tab-btn" onclick="switchTab('tab-statistics')">📉 İstatistiksel Analiz</button>
+        <button class="tab-btn" onclick="switchTab('tab-repeated')">🔄 Tekrarlı İşlemler</button>
+        <button class="tab-btn" onclick="switchTab('tab-export')">📑 Sunum & Çıktı</button>
+    </aside>
+ 
+    <main class="content">
+
+        <div id="globalFilterBar" style="background:#fef3c7; padding:10px 15px; border-radius:6px; margin-bottom:15px; border:1px solid #fde047; display:flex; align-items:center; gap:15px; flex-shrink:0;">
+            <label style="font-weight:bold; color:#854d0e; margin:0; font-size:0.95rem;">🏥 Analiz Kapsamı (Birim Tipi):</label>
+            <select id="globalBirimFilter" onchange="applyGlobalFilters()" style="margin:0; width:auto; padding:6px; border-radius:4px; border:1px solid #ca8a04; font-weight:bold; color:#854d0e; background: white;">
+                <option value="Tümü" selected>Tüm Birimler (Poliklinik + Acil + Klinik)</option>
+                <option value="Poliklinik">Poliklinik (2.1)</option>
+                <option value="Acil">Acil (2.2)</option>
+                <option value="Klinik">Klinik (2.3 / Yatan)</option>
+            </select>
+            <span style="font-size:0.85rem; color:#a16207;">(Seçiminiz tüm sekmelerdeki analizleri ve kıyaslamaları otomatik daraltır)</span>
+        </div>
+
+        <div id="tab-upload" class="tab-content active">
+            <div class="card">
+                <h3>Dosya ve Klasör Yönetimi <button class="help-btn" onclick="toggleHelp('h-upl')">❓ Bilgi</button></h3>
+                <div id="h-upl" class="help-content">
+                    Yüklenen Excel dosyasının <b>eski mi yeni mi olduğu otomatik algılanır</b>. Herhangi bir format uyuşmazlığında sistem "Dinamik Eşleştirme" panellerini devreye sokarak eski aylar ile yeni ayları kusursuz kıyaslar.
+                </div>
+                
+                <div style="background:#e0f2fe; padding:15px; border-radius:6px; margin-bottom:20px; border:1px solid #bae6fd; display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
+                    <label style="color:#0369a1; font-weight:bold; margin:0; font-size:1rem;">📅 Toplam Analiz Edilecek Ay Sayısı:</label>
+                    <input type="number" id="monthCountInput" value="2" min="1" max="12" style="width:80px; margin:0; text-align:center; font-weight:bold;">
+                    <button class="btn btn-primary" onclick="setupMonthZones()">✔️ Alanları Oluştur</button>
+                </div>
+ 
+                <div id="dynamicMonthsContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px;"></div>
+            </div>
+        </div>
+ 
+        <div id="tab-data" class="tab-content">
+            <div class="card">
+                <h3>Veri ve Filtreleme</h3>
+                <div id="dataTabButtons" style="margin-bottom: 15px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+                <div style="background: #f1f5f9; padding:10px; border-radius:6px; margin-bottom:15px; display:flex; gap:15px; align-items:flex-end;">
+                    <div style="flex:1"><label>Çalışılacak Sayfa (Sheet):</label><select id="selSheet" onchange="loadSheetData()"></select></div>
+                    <div style="flex:1; font-size:0.85rem; padding-bottom:10px;" id="dataStats"></div>
+                    <button class="btn btn-danger btn-sm" onclick="clearFilters()">🗑️ Tüm Filtreleri Temizle</button>
+                </div>
+                <div class="table-wrapper"><table id="mainTable"><thead id="mainThead"></thead><tbody id="mainTbody"></tbody></table></div>
+            </div>
+        </div>
+ 
+        <div id="tab-analysis" class="tab-content">
+            <div class="card" style="border:2px solid var(--primary);">
+                <h3 style="color:var(--primary); margin-top:0;">⚙️ Dinamik Sütun Eşleştirme (Genel Analiz)</h3>
+                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                    <div style="flex:1; background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #cbd5e1;">
+                        <h4 style="margin-top:0; color:#0369a1;">1. Ay (Yeni/Master) Sütunları</h4>
+                        <label>Kategori (Satır)</label><select id="anlCat"></select>
+                        <label>Hesap Sütunu (Değer)</label><select id="anlVal" multiple></select>
+                    </div>
+                    <div style="flex:1; background:#fffbeb; padding:15px; border-radius:6px; border:1px solid #fde68a;">
+                        <h4 style="margin-top:0; color:#b45309;">Kıyas Ayları (Eski Format) Sütunları</h4>
+                        <label>Kategori (Satır)</label><select id="oldAnlCat"></select>
+                        <label>Hesap Sütunu (Değer)</label><select id="oldAnlVal" multiple></select>
+                        <small style="color:#92400e;">Eğer aşağıdan tetkik seçilirse bu kısım atlanıp otomatik USG, MR, BT sütunları baz alınır.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Genel Analiz Raporu</h3>
+                <div class="toggle-switch"><input type="checkbox" id="chkCompareGeneral" checked><label for="chkCompareGeneral">Yüklenen Diğer Ayları da Kıyaslamaya Dahil Et</label></div>
+                
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid var(--border);">
+                    <label style="color:var(--primary); font-weight:bold;">🔍 Ayrı Ayrı Tablolanacak Tetkikler (Boş bırakırsanız tümünü tek tek döker)</label>
+                    <select id="genTetkikFilter" multiple style="height: 80px;"></select>
+                </div>
+
+                <div class="grid-4">
+                    <div>
+                       <label>İşlem Türü</label>
+                       <select id="anlOp" style="background:#f1f5f9;"><option value="count">Adet (Say / Count)</option><option value="sum">Topla (Sum)</option></select>
+                    </div>
+                    <div><label>Listeleme Limiti (0=Yok)</label><input type="number" id="anlLimit" value="10"></div>
+                    <div style="grid-column: span 2; display:flex; align-items:flex-end;">
+                        <button class="btn btn-success" onclick="runGeneralAnalysis()" style="width:100%; height:42px;">Tümünü Analiz Et & Tablola</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="resGeneral" class="card" style="display:none;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    <h3>Analiz Sonuçları</h3>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-secondary btn-sm" onclick="toggleAllCharts('gen')">📊 Tüm Grafikleri Aç/Kapa</button>
+                        <button class="btn btn-warning btn-sm" onclick="addToExport('general')">➕ Tümünü Rapora Ekle</button>
+                    </div>
+                </div>
+                <div id="genResultsContainer"></div>
+            </div>
+        </div>
+ 
+        <div id="tab-radiology" class="tab-content">
+            <div class="card" style="border:2px solid var(--primary);">
+                <h3 style="color:var(--primary); margin-top:0;">⚙️ Dinamik Sütun Eşleştirme Motoru (Hastabaşı Kıyas Köprüsü)</h3>
+                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:300px; background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #cbd5e1;">
+                        <h4 style="margin-top:0; color:#0369a1; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Yeni Versiyon (Tek Sütunlu)</h4>
+                        <label>Branş Sütunu:</label><select id="mapBrans"></select>
+                        <label>Doktor Sütunu:</label><select id="mapDoktor"></select>
+                        <label>Tetkik Türü Sütunu:</label><select id="mapTetkikTuru" onchange="updateTetkikList()"></select>
+                        <label>Adet Sütunu:</label><select id="mapTetkikAdet"></select>
+                    </div>
+                    
+                    <div style="flex:1; min-width:300px; background:#fffbeb; padding:15px; border-radius:6px; border:1px solid #fde68a;">
+                        <h4 style="margin-top:0; color:#b45309; border-bottom:1px solid #fef3c7; padding-bottom:5px;">Eski Versiyon (Ayrı Sütunlu)</h4>
+                        <label>Branş Sütunu:</label><select id="oldMapBrans"></select>
+                        <label>Doktor Sütunu:</label><select id="oldMapDoktor"></select>
+                        <div style="display:flex; gap:10px; margin-top:5px;">
+                            <div style="flex:1"><label>USG Sütunu:</label><select id="oldMapUSG"></select></div>
+                            <div style="flex:1"><label>MR Sütunu:</label><select id="oldMapMR"></select></div>
+                            <div style="flex:1"><label>BT Sütunu:</label><select id="oldMapBT"></select></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="autoMapRadiologyColumns()" style="margin-top:15px;">🤖 Sütunları Otomatik Algıla</button>
+            </div>
+
+            <div class="card">
+                <h3>Hasta Başı / Doktor Analizi</h3>
+                <div class="toggle-switch"><input type="checkbox" id="chkCompareRad" checked><label for="chkCompareRad">Yüklenen Diğer Ayları da Kıyaslamaya Dahil Et</label></div>
+ 
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border);">
+                    <label style="color:var(--primary); font-weight:bold;">🔍 Ayrı Ayrı Tablolanacak Tetkikler (Boş bırakırsanız tümünü tek tek döker)</label>
+                    <select id="radTetkikFilter" multiple style="height: 80px;" onchange="updateRadSort()"></select>
+                </div>
+                
+                <div class="grid-4">
+                    <div><label>Sıralama Kapsamı (1. Aya Göre)</label><select id="radScope"><option value="global">Hastane Geneli</option><option value="branch">Branş Bazlı</option></select></div>
+                    <div><label>Sıralama (1. Aya Göre)</label><select id="radSort"><option value="total">Toplam Hasta</option></select></div>
+                    <div><label>Limit</label><input type="number" id="radLimit" value="10" placeholder="0 = Hepsi"></div>
+                    <div style="display:flex; align-items:flex-end;">
+                       <button class="btn btn-info" onclick="runRadiologyAllInOne()" style="width:100%; height:42px;">🚀 Tümünü Analiz Et & Tablola</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="resRadiology" class="card" style="display:none;">
+                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    <h3>Analiz Sonuçları</h3>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-secondary btn-sm" onclick="toggleAllCharts('rad')">📊 Grafikleri Göster/Gizle</button>
+                        <button class="btn btn-warning btn-sm" onclick="addToExport('radiology')">➕ Tümünü Rapora Ekle</button>
+                    </div>
+                </div>
+                <div id="radResultsContainer" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+ 
+        <div id="tab-statistics" class="tab-content">
+            <div class="card">
+                <h3>İstatistiksel Analiz (Tüm Aylar Geneli)</h3>
+                <div style="background:#f0fdf4; padding:10px; border-radius:6px; margin-bottom:15px; border-left:4px solid #16a34a; font-size:0.85rem;">
+                    Bu modül yüklenen <b>tüm ayların</b> verilerini tarayarak aşağıda seçtiğiniz Teftiş/Tetkik türünde doktor/branş bazlı ortalama, maksimum, minimum değerlerini hesaplar. <i>(Sütun eşleştirmelerini Hastabaşı sekmesinden alır).</i>
+                </div>
+                
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid var(--border);">
+                    <label style="color:var(--primary); font-weight:bold;">🔍 Analiz Edilecek Teftiş/Tetkik Türü</label>
+                    <select id="statTetkikFilter" multiple style="height: 80px;" onchange="updateStatSort()"></select>
+                </div>
+
+                <div class="grid-4">
+                    <div>
+                       <label>Analiz Edilecek Tür (Odak)</label>
+                       <select id="statFocus">
+                           <option value="total">Toplam Sayı</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; align-items:flex-end;">
+                       <button class="btn btn-success" onclick="runStatisticalAnalysis()" style="width:100%; height:42px;">📉 İstatistikleri Çıkar</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="resStatistics" class="card" style="display:none;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    <h3>İstatistiksel Veriler</h3>
+                    <button class="btn btn-warning btn-sm" onclick="addToExport('statistics')">➕ Rapora Ekle</button>
+                </div>
+                <div id="chartContainer_stat" style="height:300px; margin-bottom:15px; border:1px solid #eee; padding:10px;">
+                    <canvas id="chart_stat"></canvas>
+                </div>
+                <div class="table-wrapper"><table id="tblStatistics"><thead></thead><tbody></tbody></table></div>
+            </div>
+        </div>
+ 
+        <div id="tab-repeated" class="tab-content">
+             <div class="card">
+                <h3>Tekrarlı İşlemler (Sadece Aktif Ay)</h3>
+                
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid var(--border);">
+                    <label style="color:var(--primary); font-weight:bold;">🔍 İçinde Aranacak Teftiş/Tetkik Türleri</label>
+                    <select id="repTetkikFilter" multiple style="height: 80px;"></select>
+                    <small style="color:#64748b;">(Örn: Sadece MR seçerseniz, hastanın aynı gün içindeki mükerrer MR çekimlerini bulur)</small>
+                </div>
+
+                <div class="rep-container">
+                    <div class="rep-left">
+                       <label style="font-weight:bold; color:var(--primary);">1. Gruplanacak Sütunlar:</label>
+                       <div id="repCols" class="checkbox-grid"></div>
+                    </div>
+                    <div class="rep-right">
+                       <div style="flex:1; display:flex; flex-direction:column;">
+                           <label style="font-weight:bold; color:var(--secondary);">2. Birleştirilecek Metin (Çoklu Seçim):</label>
+                           <select id="repServiceCol" multiple style="border:1px solid #cbd5e1; border-radius:6px; padding:5px;"></select>
+                       </div>
+                       <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                           <div><label>Min. Tekrar:</label><input type="number" id="repMin" value="2"></div>
+                           <div><label>Limit (0=Tümü):</label><input type="number" id="repLimit" value="15"></div>
+                       </div>
+                        <button class="btn btn-primary" onclick="runRepeated()" style="margin-top:10px; height:45px;">🔍 Mükerrerleri Bul</button>
+                    </div>
+                </div>
+             </div>
+             <div id="resRepeated" class="card" style="display:none;">
+                 <div style="display:flex; justify-content:space-between;">
+                     <h3>Mükerrer Kayıtlar</h3>
+                     <button class="btn btn-warning btn-sm" onclick="addToExport('repeated')">➕ Rapora Ekle</button>
+                 </div>
+                 <div class="table-wrapper"><table id="tblRepeated"><thead></thead><tbody></tbody></table></div>
+             </div>
+        </div>
+ 
+        <div id="tab-export" class="tab-content">
+            <div class="card">
+                <h3>Rapor Kuyruğu</h3>
+                <div style="background:#e0f2fe; padding:15px; border-radius:6px; margin-bottom:15px; border:1px solid #bae6fd;">
+                    <h4 style="margin-top:0; color:#0369a1; font-size:0.95rem;">📅 PPT Raporunda Kullanılacak Ay İsimleri</h4>
+                    <div id="monthLabelsContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px;"></div>
+                </div>
+                <div id="exportQueue" style="background:#f8fafc; padding:15px; border:1px dashed #cbd5e1; min-height:80px; margin-bottom:15px; display:flex; flex-wrap:wrap; gap:10px;">
+                    <em style="color:#94a3b8;">Kuyruk boş.</em>
+                </div>
+                <div class="grid-4">
+                    <button class="btn btn-primary" onclick="openPreview()">👁️ Önizleme</button>
+                    <button class="btn btn-success" onclick="downloadExcel()">Excel İndir (.xlsx)</button>
+                    <button class="btn btn-secondary" onclick="downloadWord()">Word İndir (.doc)</button>
+                    <button class="btn btn-warning" onclick="downloadPPT()">PPT İndir (.pptx)</button>
+                </div>
+                <button class="btn btn-danger btn-sm" style="margin-top:10px;" onclick="queue=[]; renderQueue();">Listeyi Temizle</button>
+            </div>
+        </div>
+    </main>
+</div>
+ 
+<div id="filterModal" class="modal">
+    <div class="modal-content" style="width:400px;">
+        <div class="modal-header"><h4>Filtrele</h4><span style="cursor:pointer" onclick="closeModal('filterModal')">&times;</span></div>
+        <div class="modal-body">
+            <input type="text" id="filterSearch" placeholder="Ara..." onkeyup="filterCheckboxes()" style="margin-bottom:10px; padding:5px; width:100%;">
+            <div style="margin-bottom:10px;">
+                <button class="btn btn-sm btn-primary" onclick="toggleFilterAll(true)">Tümünü Seç</button>
+                <button class="btn btn-sm btn-secondary" onclick="toggleFilterAll(false)">Temizle</button>
+            </div>
+            <div id="filterList" class="checkbox-list" style="height:300px;"></div>
+        </div>
+        <div style="padding:15px; text-align:right; border-top:1px solid #eee;">
+            <button class="btn btn-success" onclick="applyFilterFromModal()">Uygula</button>
+        </div>
+    </div>
+</div>
+ 
+<div id="previewModal" class="modal">
+    <div class="modal-content" style="width:80%; height:90%;">
+        <div class="modal-header"><h3>Önizleme</h3><span style="cursor:pointer" onclick="closeModal('previewModal')">&times;</span></div>
+        <div class="modal-body" id="previewBody"></div>
+    </div>
+</div>
+ 
+<script>
+    // --- APP STATE ---
+    const APP = {
+        monthCount: 2,
+        activePeriod: 1,
+        months: {}, 
+        charts: {},
+        lastGenList: [],
+        lastRadList: [],
+        lastStatList: null,
+        globalBirimFilter: 'Tümü'
+    };
+    let queue = [];
+    let currentFilterCol = "";
+ 
+    // Gelişmiş Kara Liste
+    const BLACKLIST = [
+        "obstetrik renkli doppler us", "obstetrik us", "ilk üç ay ayrıntılı", 
+        "ikinci üç ay ayrıntılı", "ultrason, genel (kadın doğum)", 
+        "80360201", "530001", "803311", "803312", "803530", "transkranial veya transfontanel us"
+    ];
+ 
+    // --- YARDIMCI FONKSİYONLAR ---
+
+    // TÜRKÇE KARAKTERLERİ KUSURSUZ EŞLEŞTİREN GÜVENLİ METİN KALKANI
+    function getSafeStr(s) {
+        if (!s) return "";
+        return String(s)
+            .replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
+            .replace(/Ü/g, 'u').replace(/ü/g, 'u')
+            .replace(/Ö/g, 'o').replace(/ö/g, 'o')
+            .replace(/Ç/g, 'c').replace(/ç/g, 'c')
+            .replace(/Ş/g, 's').replace(/ş/g, 's')
+            .replace(/Ğ/g, 'g').replace(/ğ/g, 'g')
+            .toLowerCase();
+    }
+
+    function levenshtein(a, b) {
+        if(a.length === 0) return b.length; 
+        if(b.length === 0) return a.length;
+        var matrix = [];
+        for(let i = 0; i <= b.length; i++){ matrix[i] = [i]; }
+        for(let j = 0; j <= a.length; j++){ matrix[0][j] = j; }
+        for(let i = 1; i <= b.length; i++){
+            for(let j = 1; j <= a.length; j++){
+                if(b.charAt(i-1) == a.charAt(j-1)){ matrix[i][j] = matrix[i-1][j-1]; } 
+                else { matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, Math.min(matrix[i][j-1] + 1, matrix[i-1][j] + 1)); }
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+ 
+    function getCompareString(filename) {
+        if(!filename) return "";
+        let name = filename.replace(/\.[^/.]+$/, "");
+        let words = name.split(/[\s_\-]+/);
+        return words.slice(0, 4).join(" ").toLowerCase();
+    }
+ 
+    function cleanDrName(name) {
+        if(!name) return "BİLİNMİYOR";
+        let n = String(name).toUpperCase();
+        n = n.replace(/^(UZM\.\s*DR\.|OP\.\s*DR\.|PROF\.\s*DR\.|DOÇ\.\s*DR\.|DR\.|UZM\.|OP\.)\s*/ig, "");
+        return n.trim();
+    }
+
+    // SON 2 KELİME ÇEKME (Noktalama işaretlerini silerek temiz kelimeler)
+    function getLastTwoWords(str) {
+        if (!str) return "";
+        let cleanStr = String(str).replace(/[^A-ZÇĞİÖŞÜa-zçğıöşü\s]/g, '').trim();
+        let words = cleanStr.split(/\s+/);
+        if (words.length <= 2) return cleanStr.toUpperCase();
+        return words.slice(-2).join(" ").toUpperCase();
+    }
+
+    // BULANIK EŞLEŞTİRME (HASTA BAŞI İÇİN) - Son 2 Kelimeye Bakar
+    function findDoctorMatch(hMap, brans, doktor) {
+        let exactKey = brans + "||" + doktor;
+        if (hMap[exactKey]) return hMap[exactKey];
+        
+        let d1_last2 = getLastTwoWords(doktor);
+        for (let k of Object.keys(hMap)) {
+            let parts = k.split("||");
+            let d2 = parts[1] || "";
+            let d2_last2 = getLastTwoWords(d2);
+            // Sadece son 2 kelime aynıysa ve yeterince uzunsa güvenli eşleşme
+            if (d1_last2 === d2_last2 && d1_last2.length > 2) return hMap[k];
+        }
+        
+        // Son çare Substring
+        let d1 = String(doktor).replace(/[^A-ZÇĞİÖŞÜ]/g, '');
+        for (let k of Object.keys(hMap)) {
+            let d2 = String(k.split("||")[1] || "").replace(/[^A-ZÇĞİÖŞÜ]/g, '');
+            if (d2.includes(d1) || d1.includes(d2)) return hMap[k];
+        }
+        return null;
+    }
+
+    // BULANIK EŞLEŞTİRME (GENEL ANALİZ İÇİN) - Son 2 Kelimeye Bakar
+    function smartCategoryMatch(hMap, category) {
+        if (hMap[category] !== undefined) return category;
+        
+        let c1 = String(category).trim().toUpperCase();
+        let c1_last2 = getLastTwoWords(c1);
+
+        for (let k of Object.keys(hMap)) {
+            let kStr = String(k).trim().toUpperCase();
+            if (kStr === c1) return k;
+            
+            let k_last2 = getLastTwoWords(kStr);
+            if (c1_last2 === k_last2 && c1_last2.length > 2) return k;
+            
+            if (kStr.includes(c1) || c1.includes(kStr)) return k;
+        }
+        return null;
+    }
+
+    // ORİJİNAL HESAP KURALI: Sayıysa Sum, Metinse/0/1 ise Count
+    function customAgg(val, op) {
+        if (op === 'count') {
+            if (val == null || val === "" || val === "0" || val === 0) return 0;
+            return 1;
+        }
+        if (val == null || val === "") return 0;
+        let num = parseFloat(val);
+        if (isNaN(num)) return 1; 
+        if (num === 0 || num === 1) return num; 
+        return 1; 
+    }
+ 
+    function toggleHelp(id) { document.getElementById(id).style.display = document.getElementById(id).style.display === 'block' ? 'none' : 'block'; }
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+        if(btn) btn.classList.add('active');
+        if(tabId === 'tab-data') loadSheetData(); 
+    }
+ 
+    // --- DİNAMİK AYLARI OLUŞTURMA ---
+    function setupMonthZones() {
+        let count = parseInt(document.getElementById('monthCountInput').value) || 2;
+        if (count > 12) count = 12;
+        if (count < 1) count = 1;
+        document.getElementById('monthCountInput').value = count;
+        APP.monthCount = count;
+ 
+        const container = document.getElementById('dynamicMonthsContainer');
+        container.innerHTML = '';
+        
+        const dataBtns = document.getElementById('dataTabButtons');
+        dataBtns.innerHTML = '';
+ 
+        const lblContainer = document.getElementById('monthLabelsContainer');
+        lblContainer.innerHTML = '';
+ 
+        const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+        const today = new Date();
+        let curM = today.getMonth() - 1; let curY = today.getFullYear();
+        if(curM < 0) { curM = 11; curY--; }
+ 
+        for(let i=1; i<=count; i++) {
+            if(!APP.months[i]) {
+                APP.months[i] = { files: [], fileName: "", workbook: null, sheetNames: [], selectedSheet: "", data: [], filtered: [], filters: {}, summaryData: [], isOldFormat: false };
+            }
+ 
+            let titleColor = i===1 ? "var(--primary)" : (i===2 ? "var(--secondary)" : "var(--info-text)");
+            let titleText = i===1 ? "1. AY (Aktif/Master Veri)" : `${i}. AY (Geçmiş Kıyas)`;
+            
+            container.innerHTML += `
+                <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:15px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                    <h4 style="color:${titleColor}; margin-top:0; border-bottom:1px solid #eee; padding-bottom:5px;">${titleText}</h4>
+                    
+                    <label>Veri Formatı:</label>
+                    <select id="formatM${i}" style="border-color:#bae6fd; font-weight:bold;" onchange="if(APP.months[${i}].files.length) loadWorkbook(${i}, false)">
+                        <option value="auto">🤖 Otomatik Algıla</option>
+                        <option value="new">Yeni Format (Tek Dosyada Tüm Birimler)</option>
+                        <option value="old">Eski Format (Ayrı Pol/Acil/Klinik Dosyaları)</option>
+                    </select>
+
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <button class="btn btn-sm btn-outline" style="flex:1;" onclick="document.getElementById('fileInpM${i}').click()">📄 Dosya Seç</button>
+                       <button class="btn btn-sm btn-outline" style="flex:1; background:#f0fdf4; border-color:#86efac; color:#166534;" onclick="document.getElementById('dirInpM${i}').click()">📁 Klasör Seç</button>
+                    </div>
+                    <input type="file" id="fileInpM${i}" multiple accept=".xlsx, .xls" style="display:none" onchange="handleFiles(this.files, ${i})">
+                    <input type="file" id="dirInpM${i}" webkitdirectory directory multiple style="display:none" onchange="handleFiles(this.files, ${i})">
+                    
+                    <label>Aktif Dosya:</label>
+                    <select id="selFileM${i}" onchange="loadWorkbook(${i}, true)"></select>
+                    <div id="matchInfoM${i}" style="font-size:0.75rem; color:#64748b; font-style:italic; margin-top:5px;">Dosya bekleniyor...</div>
+                </div>
+            `;
+ 
+            let btnClass = i === APP.activePeriod ? 'btn-primary' : 'btn-secondary';
+            dataBtns.innerHTML += `<button class="btn ${btnClass} btn-sm" id="btnSubM${i}" onclick="switchDataView(${i})">${i}. Ay Verisi</button>`;
+ 
+            let mName = curM - (i-1); let yName = curY;
+            while(mName < 0) { mName += 12; yName--; }
+            let defName = `${monthNames[mName]} ${yName}`;
+            lblContainer.innerHTML += `<div><label style="color:#0369a1;">${i}. Ay Etiketi:</label><input type="text" id="lblM${i}" value="${defName}" style="border-color:#7dd3fc;"></div>`;
+        }
+    }
+ 
+    document.addEventListener("DOMContentLoaded", () => { setupMonthZones(); });
+ 
+    // --- DOSYA İŞLEME ---
+    function handleFiles(files, mIndex) {
+        if(files.length === 0) return;
+        const validFiles = Array.from(files).filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls'));
+        
+        APP.months[mIndex].files = validFiles;
+        const sel = document.getElementById(`selFileM${mIndex}`);
+        sel.innerHTML = '<option value="">Seçiniz...</option>';
+        validFiles.forEach((f, idx) => sel.innerHTML += `<option value="${idx}">${f.name}</option>`);
+        document.getElementById(`matchInfoM${mIndex}`).innerText = `${validFiles.length} dosya yüklendi.`;
+        
+        if(validFiles.length > 0) {
+            sel.value = "0";
+            loadWorkbook(mIndex, mIndex === 1);
+        }
+    }
+ 
+    function loadWorkbook(mIndex, triggerMatch = false) {
+        let idx = document.getElementById(`selFileM${mIndex}`).value;
+        if(idx === "") return;
+        
+        let targetApp = APP.months[mIndex];
+        let fileObj = targetApp.files[idx];
+        
+        targetApp.filtered = []; targetApp.filters = {}; targetApp.selectedSheet = ""; targetApp.data = []; targetApp.summaryData = [];
+        targetApp.fileName = fileObj.name.replace(/\.[^/.]+$/, "");
+        
+        const infoDiv = document.getElementById(`matchInfoM${mIndex}`);
+        infoDiv.innerHTML = `<span style="color:#ca8a04">Okunuyor...</span>`;
+ 
+        if(mIndex === 1 && triggerMatch) {
+            const curCompareStr = getCompareString(targetApp.fileName);
+            for(let i=2; i<=APP.monthCount; i++) {
+                let m = APP.months[i];
+                if(m.files.length > 0) {
+                    let bestDist = Infinity; let bestIdx = -1;
+                    m.files.forEach((f, fIdx) => {
+                       const dist = levenshtein(curCompareStr, getCompareString(f.name));
+                       if (dist < bestDist) { bestDist = dist; bestIdx = fIdx; }
+                    });
+                    
+                    let curSel = document.getElementById(`selFileM${i}`);
+                    if (bestIdx !== -1 && curSel.value != bestIdx) {
+                       curSel.value = bestIdx;
+                        document.getElementById(`matchInfoM${i}`).innerText = `🤖 Otomatik eşleşti: ${m.files[bestIdx].name}`;
+                       loadWorkbook(i, false); 
+                    }
+                }
+            }
+        }
+ 
+        
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            targetApp.workbook = wb;
+            targetApp.sheetNames = wb.SheetNames;
+            
+            let detailSheet = targetApp.sheetNames[0];
+            let summarySheet = targetApp.sheetNames[0];
+            
+            // 1. İsimden Tahmin (Yedek Plan)
+            targetApp.sheetNames.forEach(sn => {
+                let snL = getSafeStr(sn);
+                if (snL.includes('sayfa2') || snL.includes('detay')) detailSheet = sn;
+                if (snL.includes('sayfa1') || snL.includes('ozet')) summarySheet = sn;
+            });
+            
+            // 2. KESİN ÇÖZÜM: Sadece Sütun Başlıklarını (İlk Satırı) Tarama
+            targetApp.sheetNames.forEach(sn => {
+                // {header: 1} ile okuyup [0] diyerek SADECE EN ÜSTTEKİ SÜTUN BAŞLIKLARINI alıyoruz
+                let headers = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header: 1})[0] || [];
+                
+                let isDetail = false;
+                let isSummary = false;
+                
+                headers.forEach(col => {
+                    if(!col) return;
+                    // Sütun başlığını Türkçe ve büyük/küçük harf duyarsız hale getirip boşlukları siliyoruz
+                    let cSafe = getSafeStr(col).replace(/\s+/g, '');
+                    
+                    // ESKİ versiyon için "hizmetadi", YENİ versiyon için "hastatur" veya "tetkikturu" sütunu var mı?
+                    if (cSafe.includes("hizmetadi") || cSafe.includes("hastatur") || cSafe.includes("tetkikturu")) {
+                        isDetail = true;
+                    }
+                    // Yeni versiyon özet sayfası (Hasta sayıları) için sütun başlıkları kontrolü
+                    if (cSafe.includes("bransvedoktor") || cSafe.includes("poliklinikbasvuran") || cSafe.includes("acilebasvuran")) {
+                        isSummary = true;
+                    }
+                });
+                
+                if (isDetail) detailSheet = sn;
+                if (isSummary) summarySheet = sn;
+            });
+
+            // Eğer özet ve detay aynı sayfada kalmışsa ama dosyada birden fazla sayfa varsa, diğerini özet yap
+            if (detailSheet === summarySheet && targetApp.sheetNames.length > 1) {
+                summarySheet = targetApp.sheetNames.find(s => s !== detailSheet) || summarySheet;
+            }
+
+            targetApp.selectedSheet = detailSheet; 
+            
+            let rawDetail = XLSX.utils.sheet_to_json(wb.Sheets[detailSheet], { defval: "" });
+            targetApp.summaryData = XLSX.utils.sheet_to_json(wb.Sheets[summarySheet], { defval: "" });
+
+            let formatStatus = processUnpivotAndSetData(targetApp, rawDetail, mIndex);
+            
+            if(mIndex === APP.activePeriod) {
+                populateSheetSelect();
+                document.getElementById('selSheet').value = targetApp.selectedSheet;
+                renderTable();
+                const infoDiv = document.getElementById(`matchInfoM${APP.activePeriod}`);
+                if(infoDiv) infoDiv.innerHTML = `<span style="color:#16a34a; font-weight:bold;">✅ Yüklendi (${targetApp.data.length} satır) - [${formatStatus}]</span>`;
+                
+                populateDropdowns(); 
+                if(APP.activePeriod === 1) autoMapRadiologyColumns(); 
+            } else {
+                const infoDiv = document.getElementById(`matchInfoM${mIndex}`);
+                if(infoDiv) infoDiv.innerHTML = `<span style="color:#16a34a; font-weight:bold;">✅ Yüklendi (${targetApp.data.length} satır) - [${formatStatus}]</span>`;
+                populateDropdowns();
+                if (mIndex === 2) autoMapRadiologyColumns();
+            }
+
+            applyGlobalFilters();
+        };
+        reader.readAsArrayBuffer(fileObj);
+    }
+
+    function applyGlobalFilters() {
+        // 1. İşlem başladığında yükleme ekranını aç
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        
+        // 2. Tarayıcıya loader'ı ekrana çizmesi için 50 milisaniye süre tanıyoruz
+        setTimeout(() => {
+            APP.globalBirimFilter = document.getElementById('globalBirimFilter').value;
+            
+            // --- KURAL 1: SADECE ESKİ FORMATLAR İÇİN OTOMATİK DOSYA SEÇİCİ ---
+            let targetStr = "";
+            if (APP.globalBirimFilter === 'Poliklinik') targetStr = "2.1";
+            else if (APP.globalBirimFilter === 'Acil') targetStr = "2.2";
+            else if (APP.globalBirimFilter === 'Klinik') targetStr = "2.3";
+
+            if (targetStr !== "") {
+                for(let i = 1; i <= APP.monthCount; i++) {
+                    let p = APP.months[i];
+                    
+                    // KRİTİK GÜNCELLEME: İlgili ayın "Eski Format" olduğundan kesin emin oluyoruz.
+                    // Yeni versiyonlara ASLA dosya değiştirme işlemi uygulanmaz!
+                    let formatVal = document.getElementById(`formatM${i}`) ? document.getElementById(`formatM${i}`).value : 'auto';
+                    let isEskiFormat = p && (p.isOldFormat || formatVal === 'old');
+                    
+                    if (isEskiFormat && p.files && p.files.length > 1) {
+                        let matchIdx = p.files.findIndex(f => f.name.includes(targetStr));
+                        let selEl = document.getElementById(`selFileM${i}`);
+                        
+                        // Dosyayı bulduysak ve o an seçili olan o değilse değiştir:
+                        if (matchIdx !== -1 && selEl && parseInt(selEl.value) !== matchIdx) {
+                            selEl.value = matchIdx;
+                            document.getElementById(`matchInfoM${i}`).innerHTML = `<span style="color:#2563eb; font-weight:bold;">🔄 Birim Tipi'ne göre otomatik seçildi: ${p.files[matchIdx].name}</span>`;
+                            loadWorkbook(i, false); 
+                        }
+                    }
+                }
+            }
+            // ------------------------------------------------------------------------
+
+            for(let i=1; i<=APP.monthCount; i++) {
+                let p = APP.months[i];
+                if(p && p.data.length > 0) {
+                    
+                    // --- KURAL 2: SADECE YENİ FORMATLAR İÇİN VERİ FİLTRELEME ---
+                    // Eski formatın içindeki veriye KESİNLİKLE dokunmuyoruz.
+                    if (!p.isOldFormat) {
+                        let hastaCol = Object.keys(p.data[0]).find(k => {
+                            let clean = String(k).toUpperCase().replace(/İ/g, 'I').replace(/Ü/g, 'U').replace(/\s+/g, '');
+                            return clean.includes('HASTATUR');
+                        });
+
+                        if (hastaCol) {
+                            let allVals = [...new Set(p.data.map(r => String(r[hastaCol])))];
+                            
+                            if (APP.globalBirimFilter === 'Poliklinik') {
+                                p.filters[hastaCol] = allVals.filter(v => {
+                                    let cv = v.toUpperCase().replace(/İ/g, 'I');
+                                    return cv.includes('POLI');
+                                });
+                            } else if (APP.globalBirimFilter === 'Acil') {
+                                p.filters[hastaCol] = allVals.filter(v => {
+                                    let cv = v.toUpperCase().replace(/İ/g, 'I');
+                                    return cv.includes('ACIL');
+                                });
+                            } else if (APP.globalBirimFilter === 'Klinik') {
+                                p.filters[hastaCol] = allVals.filter(v => {
+                                    let cv = v.toUpperCase().replace(/İ/g, 'I');
+                                    return cv.includes('YATAN') || (cv.includes('KLIN') && !cv.includes('POLI'));
+                                });
+                            } else {
+                                delete p.filters[hastaCol]; // Tümü seçildiyse filtreyi kaldır
+                            }
+                        }
+                    }
+                    applyInternalFilters(p);
+                }
+            }
+            
+            renderTable();
+            updateTetkikList();
+
+            const warnHtml = '<div style="padding:15px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; text-align:center; font-weight:bold;">⚠️ Analiz Kapsamı (Birim Tipi) değiştirildi. Lütfen "Tümünü Analiz Et" butonlarına tekrar basınız.</div>';
+            let genContainer = document.getElementById('genResultsContainer');
+            if(genContainer && genContainer.innerHTML.trim() !== "") genContainer.innerHTML = warnHtml;
+            let radContainer = document.getElementById('radResultsContainer');
+            if(radContainer && radContainer.innerHTML.trim() !== "") radContainer.innerHTML = warnHtml;
+
+            // 3. İşlem bittiğinde yükleme ekranını kapat
+            document.getElementById('loadingOverlay').style.display = 'none';
+
+        }, 50); // Timeout Sonu
+    }
+
+    
+    
+    function processUnpivotAndSetData(p, raw, mIndex) {
+        if (!raw || raw.length === 0) {
+            p.data = raw;
+            return "BOŞ DOSYA";
+        }
+
+        let filteredRaw = raw.filter(r => {
+            let textToSearch = String(r['Tetkik Adı'] || r['Hizmet Adı'] || r['USG - Hizmet Adı'] || '').toLowerCase();
+            let codeToSearch = String(r['Hizmet Kodu'] || r['Tetkik Kodu'] || '').toLowerCase();
+            return !BLACKLIST.some(b => textToSearch.includes(b) || codeToSearch.includes(b));
+        });
+
+        if (filteredRaw.length === 0) { p.data = []; return "BOŞ VEYA FİLTRELENMİŞ DOSYA"; }
+
+        let keys = Object.keys(filteredRaw[0]);
+        let userFormat = document.getElementById(`formatM${mIndex}`).value;
+        let isNewFormat = false;
+
+        if (userFormat === 'auto') {
+            if (keys.some(k => {
+                let s = getSafeStr(k).replace(/\s+/g, '');
+                return s === 'yatan' || s.includes('isteyenservis') || s.includes('tetkiktur') || s.includes('hastatur');
+            })) isNewFormat = true;
+        } else if (userFormat === 'new') {
+            isNewFormat = true;
+        }
+
+        let finalData = [];
+
+        if (isNewFormat) {
+            filteredRaw.forEach(r => {
+                let newRow = { ...r };
+                let tt = String(r['Tetkik Türü'] || '').toUpperCase();
+                if (tt.includes('ULTRASON') || tt.includes('DOPPLER')) newRow['Tetkik Türü_STD'] = 'USG';
+                else if (tt.includes('TOMOGRAFİ') || tt.includes('BT')) newRow['Tetkik Türü_STD'] = 'BT';
+                else if (tt.includes('REZONANS') || tt.includes('MR')) newRow['Tetkik Türü_STD'] = 'MR';
+                else newRow['Tetkik Türü_STD'] = r['Tetkik Türü'];
+
+                // HASTA TÜRÜNÜ BUL VE GİZLİ ETİKETİ (BirimTipi) YAPIŞTIR
+                let hastaCol = Object.keys(r).find(k => getSafeStr(k).replace(/\s+/g, '').includes('hastatur'));
+                let hastaTuru = hastaCol ? getSafeStr(r[hastaCol]) : "";
+                
+                let birim = 'Poliklinik';
+                if (hastaTuru.includes('acil')) birim = 'Acil';
+                else if (hastaTuru.includes('yatan') || (hastaTuru.includes('klin') && !hastaTuru.includes('poli'))) birim = 'Klinik';
+                
+                newRow['_BirimTipi'] = birim;
+                newRow['Adet_STD'] = 1; 
+                finalData.push(newRow);
+            });
+        } else {
+            let fname = getSafeStr(p.fileName);
+            let fileBirim = 'Poliklinik';
+            if (fname.includes('acil')) fileBirim = 'Acil';
+            else if (fname.includes('klinik') || fname.includes('yatan')) fileBirim = 'Klinik';
+
+            finalData = filteredRaw.map(r => ({ ...r, '_BirimTipi': fileBirim }));
+        }
+
+        p.data = finalData;
+        p.isOldFormat = !isNewFormat;
+        p.filters = {};
+        
+        if(p.data.length > 0) {
+            const headers = Object.keys(p.data[0]);
+            const serviceCols = headers.filter(h => h.toLowerCase().includes("hizmet") && h.toLowerCase().includes("adı"));
+            serviceCols.forEach(col => {
+                const uniqueVals = [...new Set(p.data.map(r => r[col]))];
+                if(uniqueVals.length > 0) p.filters[col] = uniqueVals;
+            });
+        }
+        
+        applyInternalFilters(p);
+        return isNewFormat ? "YENİ FORMAT ALGILANDI" : "ESKİ FORMAT ALGILANDI";
+    }
+
+    function applyInternalFilters(p) { 
+        let temp = p.data;
+        
+        // İLK YÜKLEME SORUNUNUN ÇÖZÜMÜ: Yeni formattaysa, menüdeki seçimi her halükarda anında uygula.
+        // Eski formattaysa (önceki aylar) dokunma!
+        if (APP.globalBirimFilter !== 'Tümü' && !p.isOldFormat) {
+            temp = temp.filter(r => r['_BirimTipi'] === APP.globalBirimFilter);
+        }
+
+        if(Object.keys(p.filters).length === 0) {
+            p.filtered = [...temp];
+        } else {
+            p.filtered = temp.filter(r => Object.keys(p.filters).every(k => p.filters[k].includes(String(r[k]))));
+        }
+    }
+
+    function switchDataView(mIndex) {
+        APP.activePeriod = mIndex;
+        for(let i=1; i<=APP.monthCount; i++) {
+            let btn = document.getElementById(`btnSubM${i}`);
+            if(btn) btn.className = i === mIndex ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+        }
+        populateSheetSelect();
+        const p = APP.months[mIndex];
+        if(p.selectedSheet) { 
+            document.getElementById('selSheet').value = p.selectedSheet; renderTable(); 
+        } else if (p.sheetNames.length > 0) { 
+            p.selectedSheet = p.sheetNames[0]; document.getElementById('selSheet').value = p.selectedSheet; loadSheetData(); 
+        } else { 
+            document.getElementById('mainTbody').innerHTML = ""; document.getElementById('dataStats').innerText = "Veri Yok";
+        }
+        if(mIndex === 1) { populateDropdowns(); autoMapRadiologyColumns(); }
+    }
+ 
+    function populateSheetSelect() {
+        const sel = document.getElementById('selSheet');
+        sel.innerHTML = '<option value="">Sayfa Seçiniz...</option>';
+        const p = APP.months[APP.activePeriod];
+        if(p && p.workbook) p.sheetNames.forEach(sn => sel.innerHTML += `<option value="${sn}" ${p.selectedSheet===sn?'selected':''}>${sn}</option>`);
+    }
+ 
+    function loadSheetData() {
+        const p = APP.months[APP.activePeriod];
+        let sn = document.getElementById('selSheet').value;
+        if (!sn && p.sheetNames.length > 0) { sn = p.sheetNames[0]; document.getElementById('selSheet').value = sn; }
+        if(p.workbook && !p.workbook.Sheets[sn]) { if(p.sheetNames.length > 0) { sn = p.sheetNames[0]; document.getElementById('selSheet').value = sn; } else return; }
+        if(!sn || !p.workbook) return;
+        p.selectedSheet = sn;
+        
+        const rawDetail = XLSX.utils.sheet_to_json(p.workbook.Sheets[sn], { defval: "" });
+        let formatStatus = processUnpivotAndSetData(p, rawDetail, APP.activePeriod);
+        
+        renderTable();
+        const infoDiv = document.getElementById(`matchInfoM${APP.activePeriod}`);
+        if(infoDiv) infoDiv.innerHTML = `<span style="color:#16a34a; font-weight:bold;">✅ Yüklendi (${p.data.length} satır) - [${formatStatus}]</span>`;
+        populateDropdowns(); 
+        if(APP.activePeriod === 1) autoMapRadiologyColumns();
+    }
+    
+    function renderTable() {
+        const p = APP.months[APP.activePeriod];
+        const tbody = document.getElementById('mainTbody'); const thead = document.getElementById('mainThead');
+        const stats = document.getElementById('dataStats');
+        if(!p || p.data.length === 0) { tbody.innerHTML = '<tr><td>Veri Yok</td></tr>'; stats.innerText = ""; return; }
+        const headers = Object.keys(p.data[0]).filter(h => !h.startsWith('_') && !h.endsWith('_STD')); 
+        
+        let hHtml = "<tr>";
+        headers.forEach(h => { const cls = p.filters[h] ? 'style="color:red; font-weight:bold;"' : ''; hHtml += `<th>${h} <span ${cls} style="cursor:pointer" onclick="openFilterModal('${h}')">▼</span></th>`; }); 
+        thead.innerHTML = hHtml + "</tr>";
+        
+        let bHtml = "";
+        p.filtered.slice(0, 100).forEach(r => { bHtml += "<tr>"; headers.forEach(h => bHtml += `<td>${r[h]}</td>`); bHtml += "</tr>"; });
+        
+        tbody.innerHTML = bHtml; 
+        stats.innerHTML = `Birim Filtresi: <b>${APP.globalBirimFilter}</b> | Görünüyor: ${Math.min(p.filtered.length, 100)} / Toplam: ${p.filtered.length} (Gerçek Toplam: ${p.data.length})`;
+    }
+ 
+    function openFilterModal(col) {
+        currentFilterCol = col; const p = APP.months[APP.activePeriod]; const vals = [...new Set(p.data.map(r => r[col]))].sort();
+        const active = p.filters[col] || vals; const list = document.getElementById('filterList'); list.innerHTML = "";
+        vals.slice(0,1000).forEach(v => { const chk = active.includes(v) ? 'checked' : ''; list.innerHTML += `<div class="cb-item"><input type="checkbox" class="flt-cb" value="${v}" ${chk}><label>${v===""?'(Boş)':v}</label></div>`; });
+        document.getElementById('filterModal').style.display = 'block';
+    }
+    function filterCheckboxes() { const txt = document.getElementById('filterSearch').value.toLowerCase(); document.querySelectorAll('.cb-item').forEach(el => el.style.display = el.innerText.toLowerCase().includes(txt) ? 'flex' : 'none'); }
+    function toggleFilterAll(state) { document.querySelectorAll('.flt-cb').forEach(cb => { if(cb.parentElement.style.display!=='none') cb.checked=state; }); }
+    function applyFilterFromModal() { const p = APP.months[APP.activePeriod]; const chks = document.querySelectorAll('.flt-cb:checked'); p.filters[currentFilterCol] = Array.from(chks).map(c => c.value); applyInternalFilters(p); renderTable(); closeModal('filterModal'); }
+    function clearFilters() { const p = APP.months[APP.activePeriod]; p.filters = {}; applyInternalFilters(p); renderTable(); }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+ 
+    function populateDropdowns() {
+        // YENİ FORMAT DOSYASI VARSA YENİ FORMAT MENÜLERİNİ DOLDUR
+        let pNew = Object.values(APP.months).find(m => m && !m.isOldFormat && m.data && m.data.length > 0);
+        if(pNew) {
+            const headers = Object.keys(pNew.data[0]).filter(h => !h.startsWith('_') && !h.endsWith('_STD'));
+            ['anlCat','anlVal','mapBrans','mapDoktor','mapTetkikTuru','mapTetkikAdet','repServiceCol'].forEach(id => {
+                let el = document.getElementById(id);
+                if(el) {
+                    let cur = Array.from(el.selectedOptions).map(o=>o.value);
+                    let isMultiple = el.hasAttribute('multiple');
+                    el.innerHTML = isMultiple ? '' : '<option value="">-- Seçiniz --</option>';
+                    headers.forEach(h => el.innerHTML += `<option value="${h}">${h}</option>`);
+                    
+                    if(!isMultiple && cur.length && headers.includes(cur[0])) el.value = cur[0];
+                    if(isMultiple && cur.length) {
+                        Array.from(el.options).forEach(opt => { if(cur.includes(opt.value)) opt.selected = true; });
+                    }
+                }
+            });
+
+            let anlCatEl = document.getElementById('anlCat');
+            let anlValEl = document.getElementById('anlVal');
+            
+            if (!anlCatEl.value) {
+                let brCol = headers.find(h => getSafeStr(h).replace(/\s+/g, '').match(/islembrans|bransislem|brans|bolum/i));
+                if (brCol) anlCatEl.value = brCol;
+            }
+            if (anlValEl.selectedOptions.length === 0) {
+                let tetCol = headers.find(h => {
+                    let clean = getSafeStr(h).replace(/\s+/g, '');
+                    return clean.includes('tetkikturu') || clean.includes('teftisturu') || clean.includes('islemadi') || clean.includes('hizmetadi');
+                });
+                if (tetCol) {
+                    Array.from(anlValEl.options).forEach(opt => { if (opt.value === tetCol) opt.selected = true; });
+                }
+            }
+
+            const rep = document.getElementById('repCols');
+            if (rep.innerHTML === "") {
+                headers.forEach(h => {
+                    let low = h.toLowerCase();
+                    let isChecked = (low.includes('doktor') || low.includes('dr.') || low.includes('hekim') || low.includes('protokol') || low.includes('hasta') || low === 'tc' || low.includes('ad soyad'));
+                    const safeH = h.replace(/"/g, '&quot;');
+                    rep.innerHTML += `<div class="cb-item"><input type="checkbox" value="${safeH}" ${isChecked ? 'checked' : ''}><label>${h}</label></div>`;
+                });
+            }
+        }
+
+        // ESKİ FORMAT DOSYASI VARSA ESKİ FORMAT MENÜLERİNİ DOLDUR
+        let pOld = Object.values(APP.months).find(m => m && m.isOldFormat && m.data && m.data.length > 0);
+        if (pOld) {
+            let oldHeaders = Object.keys(pOld.data[0]).filter(h => !h.startsWith('_') && !h.endsWith('_STD'));
+            ['oldAnlCat','oldAnlVal','oldMapBrans','oldMapDoktor','oldMapUSG','oldMapMR','oldMapBT'].forEach(id => {
+                let el = document.getElementById(id);
+                if(el) {
+                    let cur = Array.from(el.selectedOptions).map(o=>o.value);
+                    let isMultiple = el.hasAttribute('multiple');
+                    el.innerHTML = isMultiple ? '' : '<option value="">-- Seçiniz --</option>';
+                    oldHeaders.forEach(h => el.innerHTML += `<option value="${h}">${h}</option>`);
+                    
+                    if(!isMultiple && cur.length && oldHeaders.includes(cur[0])) el.value = cur[0];
+                    if(isMultiple && cur.length) {
+                        Array.from(el.options).forEach(opt => { if(cur.includes(opt.value)) opt.selected = true; });
+                    }
+                }
+            });
+
+            let oldAnlCatEl = document.getElementById('oldAnlCat');
+            let oldAnlValEl = document.getElementById('oldAnlVal');
+            const findOldCol = (regex) => oldHeaders.find(h => getSafeStr(h).replace(/\s+/g, '').match(regex));
+
+            if (!oldAnlCatEl.value) {
+                let brCol = findOldCol(/brans|bolum/i);
+                if (brCol) oldAnlCatEl.value = brCol;
+            }
+            if (oldAnlValEl.selectedOptions.length === 0) {
+                let targetCols = [];
+                let usgCol = oldHeaders.find(h => getSafeStr(h).replace(/\s+/g, '').match(/usg|ultrason|doppler/i));
+                if (usgCol) targetCols.push(usgCol);
+                let mrCol = oldHeaders.find(h => getSafeStr(h).replace(/\s+/g, '').match(/mr|rezonans|emar/i));
+                if (mrCol) targetCols.push(mrCol);
+                let btCol = oldHeaders.find(h => {
+                    let safe = getSafeStr(h);
+                    let clean = safe.replace(/\s+/g, '');
+                    return clean.includes('tomografi') || clean.includes('-bt') || clean.includes('_bt') || clean.includes('tetkikbt') || safe.includes(' bt ') || safe.startsWith('bt ') || safe.endsWith(' bt') || safe === 'bt';
+                });
+                if (btCol) targetCols.push(btCol);
+
+                Array.from(oldAnlValEl.options).forEach(opt => {
+                    if (targetCols.includes(opt.value)) opt.selected = true;
+                });
+            }
+        }
+    }
+ 
+    // YENİ: Arayüz (HTML) için yeşil/kırmızı oklu Yüzde hesaplayıcı
+    function getPctArrow(val1, val2) {
+        if (val2 === 0 && val1 === 0) return `<span class="arrow-neu" style="color:#64748b;">-%0</span>`;
+        if (val2 === 0 && val1 > 0) return `<span class="arrow-up" style="color:green; font-weight:bold;">▲ +%100.0</span>`;
+        let diffPct = ((val1 - val2) / val2) * 100;
+        if (diffPct > 0) return `<span class="arrow-up" style="color:green; font-weight:bold;">▲ +%${diffPct.toFixed(1)}</span>`;
+        if (diffPct < 0) return `<span class="arrow-down" style="color:red; font-weight:bold;">▼ %${diffPct.toFixed(1)}</span>`;
+        return `<span class="arrow-neu" style="color:#64748b;">-%0.0</span>`;
+    }
+
+    // YENİ: Excel ve PPT çıktıları için düz metin formatında Yüzde hesaplayıcı
+    function getPctArrowText(val1, val2) {
+        if (val2 === 0 && val1 === 0) return `-%0`;
+        if (val2 === 0 && val1 > 0) return `▲ +%100.0`;
+        let diffPct = ((val1 - val2) / val2) * 100;
+        if (diffPct > 0) return `▲ +%${diffPct.toFixed(1)}`;
+        if (diffPct < 0) return `▼ %${diffPct.toFixed(1)}`;
+        return `-%0.0`;
+    }
+ 
+    function autoMapRadiologyColumns() {
+        let pNew = Object.values(APP.months).find(m => m && !m.isOldFormat && m.data && m.data.length > 0);
+        if(pNew) {
+            const headers = Object.keys(pNew.data[0]);
+            const findCol = (regex) => headers.find(h => getSafeStr(h).replace(/\s+/g, '').match(regex));
+            
+            let docCol = findCol(/islemdoktoru|hekimadi|doktoradi|hekim|doktor/i);
+            if(docCol && !document.getElementById('mapDoktor').value) document.getElementById('mapDoktor').value = docCol;
+            
+            let brCol = findCol(/islembrans|bransislem|brans|bolum/i);
+            if(brCol && !document.getElementById('mapBrans').value) document.getElementById('mapBrans').value = brCol;
+            
+            let tetCol = findCol(/teftisturu|tetkikturu|islemadi|hizmetadi/i);
+            if(tetCol && !document.getElementById('mapTetkikTuru').value) document.getElementById('mapTetkikTuru').value = tetCol;
+        }
+        
+        let pOld = Object.values(APP.months).find(m => m && m.isOldFormat && m.data && m.data.length > 0);
+        if(pOld) {
+            const oldHeaders = Object.keys(pOld.data[0]);
+            const findOldCol = (regex) => oldHeaders.find(h => getSafeStr(h).replace(/\s+/g, '').match(regex));
+            
+            const findSmart = (keywords) => oldHeaders.find(h => {
+                let safe = getSafeStr(h);
+                let clean = safe.replace(/\s+/g, '');
+                return keywords.some(kw => {
+                    if (kw === 'bt') return clean.includes('tomografi') || clean.includes('-bt') || clean.includes('_bt') || clean.includes('tetkikbt') || safe.includes(' bt ') || safe.startsWith('bt ') || safe.endsWith(' bt') || safe === 'bt';
+                    return clean.includes(kw);
+                });
+            });
+            
+            let brCol = findOldCol(/brans|bolum/i);
+            if(brCol && !document.getElementById('oldMapBrans').value) document.getElementById('oldMapBrans').value = brCol;
+            
+            let docCol = findOldCol(/hekimadi|doktoradi|hekim|doktor/i);
+            if(docCol && !document.getElementById('oldMapDoktor').value) document.getElementById('oldMapDoktor').value = docCol;
+            
+            let usgCol = findSmart(['usg', 'ultrason', 'doppler']);
+            if(usgCol && !document.getElementById('oldMapUSG').value) document.getElementById('oldMapUSG').value = usgCol;
+            
+            let mrCol = findSmart(['mr', 'rezonans', 'emar']);
+            if(mrCol && !document.getElementById('oldMapMR').value) document.getElementById('oldMapMR').value = mrCol;
+            
+            let btCol = findSmart(['bt']);
+            if(btCol && !document.getElementById('oldMapBT').value) document.getElementById('oldMapBT').value = btCol;
+            
+            if(!document.getElementById('oldAnlCat').value && brCol) {
+                document.getElementById('oldAnlCat').value = brCol;
+            }
+        }
+        updateTetkikList();
+    }
+ 
+    function updateTetkikList() {
+        let tCol = document.getElementById('mapTetkikTuru').value;
+        // Tüm filtreleme listelerinin ID'lerini buraya dahil ettik:
+        let selectIds = ['genTetkikFilter', 'radTetkikFilter', 'statTetkikFilter', 'repTetkikFilter'];
+        
+        let p1 = APP.months[1];
+        if(!p1 || (!tCol && !p1.isOldFormat)) return;
+        
+        let vals = [];
+        if (!p1.isOldFormat) {
+            vals = [...new Set(p1.filtered.map(r => r['Tetkik Türü_STD'] || r[tCol]))].filter(v => v && v !== '-').sort();
+        } else {
+            vals = ['USG', 'MR', 'BT']; 
+        }
+        
+        selectIds.forEach(id => {
+            let sel = document.getElementById(id);
+            if(sel) {
+                sel.innerHTML = "";
+                vals.forEach(v => {
+                    // YENİ GÜNCELLEME: 'selected' özelliği sayesinde artık tüm analiz türlerinde 
+                    // (İstatistik ve Tekrarlı dahil) tüm tetkikler varsayılan olarak seçili gelecek.
+                    sel.innerHTML += `<option value="${v}" selected>${v}</option>`;
+                });
+            }
+        });
+    }
+ 
+    function getPivot(p, op, targetTetkik, valColIndex = 0) {
+        if (!p || p.data.length === 0) return [];
+        let groups = {};
+        
+        // Hangi format gelirse gelsin, kendi kutucuğundan ayarı çeker
+        let cCat = p.isOldFormat ? document.getElementById('oldAnlCat').value : document.getElementById('anlCat').value;
+        if (!cCat) return []; 
+        
+        let tCol = p.isOldFormat ? null : document.getElementById('mapTetkikTuru').value;
+        
+        let valCol = null;
+        if (!p.isOldFormat) {
+            let valOptions = document.getElementById('anlVal').selectedOptions;
+            valCol = valOptions.length > valColIndex ? valOptions[valColIndex].value : (valOptions[0] ? valOptions[0].value : null);
+        }
+
+        p.filtered.forEach(r => {
+            let k = r[cCat] || "(Boş)";
+            let v = 0;
+
+            if (p.isOldFormat) {
+                let valToUse = 0;
+                let tUp = getSafeStr(targetTetkik || "");
+                let oldVals = Array.from(document.getElementById('oldAnlVal').selectedOptions).map(o=>o.value);
+                let colToUse = null;
+                
+                let bestMatch = oldVals.find(ov => {
+                    let ovSafe = getSafeStr(ov);
+                    if ((tUp.includes('usg') || tUp.includes('ultrason') || tUp.includes('doppler')) && (ovSafe.includes('usg') || ovSafe.includes('ultrason') || ovSafe.includes('doppler'))) return true;
+                    if ((tUp.includes('mr') || tUp.includes('rezonans')) && (ovSafe.includes('mr') || ovSafe.includes('rezonans'))) return true;
+                    if ((tUp.includes('bt') || tUp.includes('tomografi')) && (ovSafe.includes('bt') || ovSafe.includes('tomografi'))) return true;
+                    return ovSafe.includes(tUp) || tUp.includes(ovSafe);
+                });
+
+                if (bestMatch) {
+                    colToUse = bestMatch;
+                } else {
+                    if (tUp.includes('usg') || tUp.includes('ultrason') || tUp.includes('doppler')) colToUse = document.getElementById('oldMapUSG').value;
+                    else if (tUp.includes('mr') || tUp.includes('rezonans')) colToUse = document.getElementById('oldMapMR').value;
+                    else if (tUp.includes('bt') || tUp.includes('tomografi')) colToUse = document.getElementById('oldMapBT').value;
+                }
+
+                if (colToUse) {
+                    valToUse = customAgg(r[colToUse], op); 
+                } else if (oldVals.length === 1) {
+                    valToUse = customAgg(r[oldVals[0]], op);
+                } else if (!targetTetkik && oldVals.length > 0) {
+                    oldVals.forEach(ov => valToUse += customAgg(r[ov], op));
+                }
+
+                if (valToUse > 0 || op === 'count') {
+                    if(!groups[k]) groups[k] = { sum:0, count:0 };
+                    groups[k].sum += valToUse;
+                    groups[k].count++;
+                }
+            } else {
+                let mappedT = r['Tetkik Türü_STD'] || r[tCol];
+                if (targetTetkik && mappedT !== targetTetkik) return; 
+
+                v = customAgg(r[valCol], op);
+                if(!groups[k]) groups[k] = { sum:0, count:0 };
+                groups[k].sum += v; 
+                if (v > 0 || op==='count') groups[k].count++;
+            }
+        });
+        return Object.keys(groups).map(k => ({ category: k, value: (op==='avg' ? (groups[k].sum/groups[k].count) : groups[k].sum) }));
+    }
+ 
+    function runGeneralAnalysis() {
+        const op = document.getElementById('anlOp').value;
+        const limit = parseInt(document.getElementById('anlLimit').value) || 0;
+        const compare = document.getElementById('chkCompareGeneral').checked;
+        
+        let p1 = APP.months[1];
+        if(!p1 || p1.data.length === 0) { alert("Önce 1. Ay verisini yükleyin."); return; }
+        
+        // DİNAMİK VALİDASYON: 1. Ay hangi formattaysa onun kutuları boş mu diye bakar
+        if (p1.isOldFormat) {
+            if(!document.getElementById('oldAnlCat').value) { alert("Lütfen Eski Format Kategori (Satır) seçin."); return; }
+        } else {
+            if(!document.getElementById('anlCat').value || document.getElementById('anlVal').selectedOptions.length === 0) { alert("Lütfen Yeni Format Kategori ve Hesap Sütunu seçin."); return; }
+        }
+        
+        let tetkikList = Array.from(document.getElementById('genTetkikFilter').selectedOptions).map(o => o.value);
+        if (tetkikList.length === 0) { tetkikList = Array.from(document.getElementById('genTetkikFilter').options).map(o => o.value); }
+        if (tetkikList.length === 0) tetkikList = ['USG', 'MR', 'BT']; 
+
+        APP.lastGenList = []; 
+        const container = document.getElementById('genResultsContainer');
+        container.innerHTML = ""; 
+
+        // Eğer yeni formatsa seçili sütun sayısı kadar döner, eski formatsa içindeki tetkikler kadar 1 kez döner
+        let loopCount = p1.isOldFormat ? 1 : document.getElementById('anlVal').selectedOptions.length;
+
+        for(let vIdx = 0; vIdx < loopCount; vIdx++) {
+            tetkikList.forEach((tType, tIdx) => {
+                let data = getPivot(p1, op, tType, vIdx);
+                if (!data || data.length === 0) return;
+                
+                data.sort((a,b) => b.value - a.value);
+                let grandTotal = data.reduce((a,b) => a + b.value, 0);
+     
+                let hMaps = {}; let hTotals = {};
+                if(compare) {
+                    for(let i=2; i<=APP.monthCount; i++) {
+                        let p = APP.months[i];
+                        if(p && p.data.length > 0) {
+                            let pData = getPivot(p, op, tType, vIdx);
+                            hMaps[i] = {}; hTotals[i] = 0;
+                            pData.forEach(item => { hMaps[i][item.category] = item.value; hTotals[i] += item.value; });
+                        }
+                    }
+                }
+     
+                let displayData = [];
+                let othersVal = 0; let othersHist = {}; 
+                for(let m=2; m<=APP.monthCount; m++) othersHist[m] = 0;
+     
+                if(limit > 0 && data.length > limit) {
+                    displayData = data.slice(0, limit);
+                    for(let i=limit; i<data.length; i++) {
+                        othersVal += data[i].value;
+                        if(compare) {
+                            for(let m=2; m<=APP.monthCount; m++) { if(hMaps[m]) othersHist[m] += (hMaps[m][data[i].category] || 0); }
+                        }
+                    }
+                    displayData.push({ category: "DİĞERLERİ", value: othersVal, isOther: true });
+                } else displayData = data;
+     
+                displayData.forEach(d => {
+                    d.percent = grandTotal > 0 ? (d.value / grandTotal * 100).toFixed(2) : 0;
+                    d.history = {};
+                    if(compare) {
+                        for(let m=2; m<=APP.monthCount; m++) {
+                            if(hMaps[m]) {
+                                let hVal = 0;
+                                if (d.isOther) {
+                                    hVal = othersHist[m];
+                                } else {
+                                    let matchedKey = smartCategoryMatch(hMaps[m], d.category);
+                                    hVal = matchedKey ? hMaps[m][matchedKey] : 0;
+                                }
+                                let hPct = hTotals[m] > 0 ? (hVal / hTotals[m] * 100).toFixed(2) : 0;
+                                d.history[m] = { val: hVal, pct: hPct, diff: d.value - hVal };
+                            }
+                        }
+                    }
+                });
+     
+                let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
+                const resObj = { data: displayData, compare, total: grandTotal, hTotals: hTotals, title: `${scopeName}-Genel Analiz/${tType}`, uniqueId: `gen_${vIdx}_${tIdx}_${Date.now()}` };
+                APP.lastGenList.push(resObj);
+                renderResultBlock(resObj, container, 'gen');
+            });
+        }
+        document.getElementById('resGeneral').style.display = 'block';
+    }
+ 
+    function getRadiologyAggregates(p, cols, oldCols, tTypeOnly) {
+        let dataset = p.filtered;
+        if (!dataset || dataset.length === 0) return [];
+        
+        let headers = Object.keys(dataset[0]);
+        const findCol = (regex) => headers.find(h => getSafeStr(h).replace(/\s+/g, '').match(regex));
+        
+        let cBr, cDr, cTet, cAdet;
+        if (p.isOldFormat) {
+            cBr = oldCols.brans;
+            cDr = oldCols.dr;
+        } else {
+            cBr = headers.includes(cols.brans) ? cols.brans : (findCol(/islembrans|bransislem|brans|bolum/i));
+            cDr = headers.includes(cols.dr) ? cols.dr : (findCol(/islemdoktoru|hekimadi|doktoradi|hekim|doktor/i));
+            cTet = headers.includes(cols.tetkikTuru) ? cols.tetkikTuru : 'Teftiş Türü';
+            cAdet = headers.includes(cols.adet) ? cols.adet : 'Adet';
+        }
+
+        if (!cBr || !cDr) return []; 
+
+        let branchPools = {};
+        let docTotals = {};
+        let map = {};
+        
+        let tUp = getSafeStr(tTypeOnly || "");
+        let isUSG = tUp.includes('usg') || tUp.includes('ultrason') || tUp.includes('doppler');
+        let isMR = tUp.includes('mr') || tUp.includes('rezonans') || tUp.includes('emar');
+        let isBT = tUp.includes('bt') || tUp.includes('tomografi');
+
+        dataset.forEach(r => {
+            let br = String(r[cBr] || "Bilinmiyor").trim();
+            let dr = cleanDrName(r[cDr]);
+            
+            let k = br+"||"+dr;
+            if(!map[k]) {
+                map[k] = { brans: br, doktor: dr, tetkikTotal: 0 };
+                map[k][tTypeOnly] = 0; 
+            }
+
+            if (!p.isOldFormat) {
+                let tType = r['Tetkik Türü_STD'] || r[cTet];
+                let adet = customAgg(r[cAdet], 'sum');
+                if (adet === 0 && tType && tType !== '-') adet = 1;
+     
+                if (tType === tTypeOnly) {
+                    map[k].tetkikTotal += adet;
+                    map[k][tTypeOnly] += adet;
+                }
+            } else {
+                let usgAdet = customAgg(r[oldCols.usg], 'sum');
+                let mrAdet = customAgg(r[oldCols.mr], 'sum');
+                let btAdet = customAgg(r[oldCols.bt], 'sum');
+                
+                if (isUSG && usgAdet > 0) { map[k].tetkikTotal += usgAdet; map[k][tTypeOnly] += usgAdet; }
+                if (isMR && mrAdet > 0) { map[k].tetkikTotal += mrAdet; map[k][tTypeOnly] += mrAdet; }
+                if (isBT && btAdet > 0) { map[k].tetkikTotal += btAdet; map[k][tTypeOnly] += btAdet; }
+            }
+        });
+
+        // HATA DÜZELTMESİ: Sütun adını dinamik ve Regex kullanarak bulma
+        let brDrCol = null;
+        if (!p.isOldFormat && p.summaryData && p.summaryData.length > 0) {
+            let sampleKeys = Object.keys(p.summaryData[0]);
+            brDrCol = sampleKeys.find(k => getSafeStr(k).replace(/\s+/g, '').includes('bransvedoktor'));
+        }
+        
+        let isNewFormat = !p.isOldFormat && brDrCol;
+        
+        if (isNewFormat) {
+            let sampleRow = p.summaryData[0];
+            let keys = Object.keys(sampleRow);
+            
+            // HARİKA TESPİT: 'klinik' kelimesi 'poliklinik' içinde geçtiği için hata oluyordu.
+            // ÇÖZÜM: İçinde 'poliklinik' ve 'hasta' geçenleri Poli yap, 
+            // 'klinik' ve 'hasta' geçip 'poli' GEÇMEYENLERİ Klinik yap!
+            let kPoli = keys.find(k => {
+                let clean = getSafeStr(k).replace(/\s+/g, '');
+                return clean.includes('poliklinik') && clean.includes('hasta');
+            });
+            let kAcil = keys.find(k => {
+                let clean = getSafeStr(k).replace(/\s+/g, '');
+                return clean.includes('acil') && clean.includes('hasta');
+            });
+            let kKlinik = keys.find(k => {
+                let clean = getSafeStr(k).replace(/\s+/g, '');
+                return (clean.includes('klinik') && clean.includes('hasta') && !clean.includes('poli')) || 
+                       clean.includes('doktorunyatirdigi') || 
+                       clean.includes('servisteyatan');
+            });
+            let kBrans = keys.find(k => getSafeStr(k).trim() === 'brans');
+
+            p.summaryData.forEach(sr => {
+                let brDr = String(sr[brDrCol] || '').toUpperCase();
+                let originalBr = String(sr[kBrans] || sr['Branş'] || sr['Brans'] || '').trim();
+
+                let poli = kPoli ? parseFloat(sr[kPoli]) || 0 : 0;
+                let acil = kAcil ? parseFloat(sr[kAcil]) || 0 : 0;
+                let klinik = kKlinik ? parseFloat(sr[kKlinik]) || 0 : 0;
+
+                let valDr = 0;
+                let valBr = 0;
+
+                if (APP.globalBirimFilter === 'Poliklinik') {
+                    valDr = poli; valBr = poli;
+                } else if (APP.globalBirimFilter === 'Acil') {
+                    valDr = acil; valBr = acil;
+                } else if (APP.globalBirimFilter === 'Klinik') {
+                    valDr = klinik; valBr = klinik;
+                } else {
+                    valDr = poli + acil + klinik;
+                    valBr = poli + acil + klinik;
+                }
+
+                if (brDr.endsWith('TOPLAM')) {
+                    branchPools[originalBr] = valBr;
+                } else if (brDr.includes('-')) {
+                    let drName = cleanDrName(brDr.substring(brDr.indexOf('-')+1).trim());
+                    docTotals[originalBr+"||"+drName] = valDr;
+                    docTotals[drName] = valDr; 
+                }
+            });
+        } else {
+            dataset.forEach(r => {
+                let br = String(r[cBr] || "Bilinmiyor").trim();
+                if (p.isOldFormat) {
+                    if (isUSG) branchPools[br] = (branchPools[br]||0) + customAgg(r[oldCols.usg], 'sum');
+                    if (isMR) branchPools[br] = (branchPools[br]||0) + customAgg(r[oldCols.mr], 'sum');
+                    if (isBT) branchPools[br] = (branchPools[br]||0) + customAgg(r[oldCols.bt], 'sum');
+                } else {
+                    let tType = r['Tetkik Türü_STD'] || r[cTet];
+                    if (tType === tTypeOnly) branchPools[br] = (branchPools[br]||0) + customAgg(r[cAdet], 'sum');
+                }
+            });
+        }
+
+        let result = Object.values(map);
+        result.forEach(d => {
+            let k = d.brans+"||"+d.doktor;
+            if (isNewFormat) {
+                d.branchPool = branchPools[d.brans] || 0;
+                d.total = docTotals[k] !== undefined ? docTotals[k] : (docTotals[d.doktor] || 0);
+            } else {
+                d.branchPool = branchPools[d.brans] || 0;
+                d.total = d.tetkikTotal || 0; 
+            }
+        });
+        
+        return result;
+    }
+
+ 
+    function runRadiologyAllInOne() {
+        const cols = { 
+            brans: document.getElementById('mapBrans').value, 
+            dr: document.getElementById('mapDoktor').value,
+            tetkikTuru: document.getElementById('mapTetkikTuru').value, 
+            adet: document.getElementById('mapTetkikAdet').value
+        };
+        const oldCols = {
+            brans: document.getElementById('oldMapBrans').value,
+            dr: document.getElementById('oldMapDoktor').value,
+            usg: document.getElementById('oldMapUSG').value,
+            mr: document.getElementById('oldMapMR').value,
+            bt: document.getElementById('oldMapBT').value
+        };
+
+        let p1 = APP.months[1];
+        if(!p1 || p1.data.length===0) { alert("Önce 1. Ay verisini yükleyin."); return; }
+
+        // DİNAMİK VALİDASYON: Sadece 1. Ayın formatına ait zorunlu alanlara bakar
+        if (!p1.isOldFormat) {
+            if(!cols.brans || !cols.dr || !cols.tetkikTuru) { alert("Lütfen Yeni Versiyon için Branş, Doktor ve Teftiş Türü sütunlarını seçiniz."); return; }
+        } else {
+            if(!oldCols.brans || !oldCols.dr) { alert("Lütfen Eski Versiyon için Branş ve Doktor sütunlarını seçiniz."); return; }
+        }
+
+        // Otomatik Hepsini Alma
+        let targetKeys = Array.from(document.getElementById('radTetkikFilter').selectedOptions).map(o => o.value);
+        if (targetKeys.length === 0) { targetKeys = Array.from(document.getElementById('radTetkikFilter').options).map(o => o.value); }
+        if(targetKeys.length === 0) targetKeys = ['USG', 'MR', 'BT']; // Fallback
+
+        const scope = document.getElementById('radScope').value;
+        const limit = parseInt(document.getElementById('radLimit').value) || 0;
+        const compare = document.getElementById('chkCompareRad').checked;
+        let sKey = document.getElementById('radSort').value;
+        
+        APP.lastRadList = [];
+        const container = document.getElementById('radResultsContainer');
+        container.innerHTML = "";
+
+        targetKeys.forEach((tTypeOnly, idx) => {
+            let curData = getRadiologyAggregates(p1, cols, oldCols, tTypeOnly);
+            if (!curData || curData.length === 0) return;
+            
+            let hMaps = {};
+            if(compare) {
+                for(let i=2; i<=APP.monthCount; i++) {
+                    let p = APP.months[i];
+                    if(p && p.data.length > 0) {
+                        let pData = getRadiologyAggregates(p, cols, oldCols, tTypeOnly);
+                        hMaps[i] = {};
+                        pData.forEach(item => hMaps[i][item.brans+"||"+item.doktor] = item);
+                    }
+                }
+            }
+
+            curData.forEach(d => {
+                d[tTypeOnly + 'P'] = d.total > 0 ? (d[tTypeOnly]/d.total*100).toFixed(1) : 0;
+                d[tTypeOnly + 'BrP'] = d.branchPool > 0 ? (d[tTypeOnly]/d.branchPool*100).toFixed(1) : 0;
+
+                d.history = {};
+                if(compare) {
+                    for(let m=2; m<=APP.monthCount; m++) {
+                        if(hMaps[m]) {
+                            // Son İki Kelime Akıllı Doktor Eşleştirmesi
+                            let hp = findDoctorMatch(hMaps[m], d.brans, d.doktor);
+                            if(hp) {
+                                d.history[m] = { total: hp.total, pool: hp.branchPool };
+                                d.history[m][tTypeOnly] = hp[tTypeOnly];
+                                d.history[m][tTypeOnly+'P'] = hp.total > 0 ? (hp[tTypeOnly]/hp.total*100).toFixed(1) : 0;
+                                d.history[m][tTypeOnly+'BrP'] = hp.branchPool > 0 ? (hp[tTypeOnly]/hp.branchPool*100).toFixed(1) : 0;
+                            } else {
+                                d.history[m] = { total:0, pool:0 };
+                                d.history[m][tTypeOnly] = 0; d.history[m][tTypeOnly+'P'] = 0; d.history[m][tTypeOnly+'BrP'] = 0;
+                            }
+                        }
+                    }
+                }
+            });
+
+            const sorter = (a,b) => {
+                // Tabloyu o anki tetkikin (MR, BT, USG vb.) kendi sayısına göre büyükten küçüğe sıralar
+                let vA = a[tTypeOnly] || 0;
+                let vB = b[tTypeOnly] || 0;
+                return vB - vA;
+            };
+            
+            let grandTotal = { total:0 };
+            grandTotal[tTypeOnly] = 0;
+            curData.forEach(d => { grandTotal.total += d.total; grandTotal[tTypeOnly] += d[tTypeOnly]; });
+            
+            let finalList = [];
+            let sortedData = [...curData];
+            
+            if(scope === 'global') {
+                sortedData.sort(sorter);
+                if(limit > 0 && sortedData.length > limit) {
+                    finalList = sortedData.slice(0, limit);
+                    let others = { brans:'-', doktor:'DİĞERLERİ', total:0, branchPool:'-', isOther:true, history:{} };
+                    others[tTypeOnly] = 0; others[tTypeOnly+'P'] = 0; others[tTypeOnly+'BrP'] = 0;
+                    finalList.push(others);
+                } else finalList = sortedData;
+            } else {
+                let branches = {}; sortedData.forEach(d => { if(!branches[d.brans]) branches[d.brans]=[]; branches[d.brans].push(d); });
+                Object.keys(branches).sort().forEach(br => {
+                    let items = branches[br]; items.sort(sorter);
+                    if(limit>0 && items.length>limit) {
+                        finalList = finalList.concat(items.slice(0,limit));
+                        let others = { brans:br, doktor:'DİĞERLERİ', total:0, branchPool:'-', isOther:true, history:{} };
+                        others[tTypeOnly] = 0; others[tTypeOnly+'P'] = 0; others[tTypeOnly+'BrP'] = 0;
+                        finalList.push(others);
+                    } else finalList = finalList.concat(items);
+                });
+            }
+            
+            let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
+            let newTitle = `${scopeName}-Hasta/${tTypeOnly} Analizi`;
+
+            let resObj = { type:'rad', data: finalList, compare, total: grandTotal, title: newTitle, sortKey: sKey, tTypeOnly: tTypeOnly, uniqueId: `rad_${idx}_${Date.now()}` };
+            APP.lastRadList.push(resObj); 
+            renderRadiologyTableUI(resObj, container);
+        });
+
+        document.getElementById('resRadiology').style.display = 'block';
+    }
+ 
+    // --- İSTATİSTİKSEL ANALİZ ---
+    function runStatisticalAnalysis() {
+        const cols = {
+            brans: document.getElementById('mapBrans').value,
+            dr: document.getElementById('mapDoktor').value,
+            tetkikTuru: document.getElementById('mapTetkikTuru').value, 
+            adet: document.getElementById('mapTetkikAdet').value
+        };
+        const oldCols = {
+            brans: document.getElementById('oldMapBrans').value,
+            dr: document.getElementById('oldMapDoktor').value,
+            usg: document.getElementById('oldMapUSG').value,
+            mr: document.getElementById('oldMapMR').value,
+            bt: document.getElementById('oldMapBT').value
+        };
+ 
+        let validMonths = [];
+        for(let i=1; i<=APP.monthCount; i++) {
+            if(APP.months[i] && APP.months[i].data.length > 0) validMonths.push(i);
+        }
+        if(validMonths.length < 1) return alert("En az 1 aylık veri yüklemelisiniz.");
+ 
+        const focus = document.getElementById('statFocus').value;
+        const selectedTetkikler = Array.from(document.getElementById('statTetkikFilter').selectedOptions).map(o => o.value);
+ 
+        let masterMap = {};
+        validMonths.forEach(mIndex => {
+            let mData = getRadiologyAggregates(APP.months[mIndex], cols, oldCols, selectedTetkikler.length > 0 ? selectedTetkikler[0] : 'USG'); 
+            
+            mData.forEach(d => {
+                let drLast2 = getLastTwoWords(d.doktor);
+                
+                // İstatistiksel Analiz İçin de Son İki Kelime Birleştirme
+                let existingKey = Object.keys(masterMap).find(k => {
+                    let kDrLast2 = getLastTwoWords(masterMap[k].doktor);
+                    return kDrLast2 === drLast2 && drLast2.length > 2; 
+                });
+
+                let k = existingKey ? existingKey : (d.brans + "||" + d.doktor);
+                
+                if(!masterMap[k]) masterMap[k] = { brans: d.brans, doktor: d.doktor, history: {} };
+                masterMap[k].history[mIndex] = d[focus] || 0;
+            });
+        });
+ 
+        let resultData = [];
+        Object.keys(masterMap).forEach(k => {
+            let obj = masterMap[k];
+            let vals = validMonths.map(m => obj.history[m] || 0);
+            let sum = vals.reduce((a,b)=>a+b, 0);
+            obj.avg = sum > 0 ? (sum / validMonths.length).toFixed(1) : 0;
+            obj.max = Math.max(...vals);
+            obj.min = Math.min(...vals);
+            obj.totalSum = sum;
+            resultData.push(obj);
+        });
+ 
+        resultData.sort((a,b) => (b.history[1] || 0) - (a.history[1] || 0));
+ 
+        let thHtml = `<tr><th>Branş</th><th>Doktor</th>`;
+        validMonths.forEach(m => thHtml += `<th class="month-col">${m}. Ay Değer</th>`);
+        thHtml += `<th style="background:#f1f5f9;">Ortalama</th><th style="color:#ca8a04;">Max</th><th style="color:#94a3b8;">Min</th><th>Tüm Aylar Toplamı</th></tr>`;
+ 
+        const tb = document.getElementById('tblStatistics');
+        tb.querySelector('thead').innerHTML = thHtml;
+ 
+        let html = "";
+        resultData.forEach(r => {
+            html += `<tr><td>${r.brans}</td><td>${r.doktor}</td>`;
+            validMonths.forEach(m => html += `<td class="month-col">${r.history[m]||0}</td>`);
+            html += `<td style="background:#f8fafc; font-weight:bold;">${r.avg}</td>
+                     <td style="color:#ca8a04;">${r.max}</td>
+                     <td style="color:#94a3b8;">${r.min}</td>
+                     <td style="font-weight:bold; color:var(--primary);">${r.totalSum}</td></tr>`;
+        });
+        tb.querySelector('tbody').innerHTML = html;
+ 
+        const ctx = document.getElementById('chart_stat').getContext('2d');
+        if(APP.charts['stat']) APP.charts['stat'].destroy();
+        
+        let lbls = resultData.slice(0, 30).map(d => d.doktor);
+        let avgData = resultData.slice(0, 30).map(d => d.avg);
+        
+        APP.charts['stat'] = new Chart(ctx, { 
+            type: 'bar',
+            data: { labels: lbls, datasets: [{ label: 'Ortalama ('+focus.toUpperCase()+')', data: avgData, backgroundColor: '#10b981' }] }, 
+            options: { responsive: true, maintainAspectRatio: false } 
+        });
+ 
+        document.getElementById('resStatistics').style.display = 'block';
+ 
+        let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
+        let tetkikName = selectedTetkikler.length > 0 ? selectedTetkikler.join(', ') : 'Tümü';
+        APP.lastStatList = { data: resultData, validMonths, focus, title: `${scopeName}-İstatistik/${tetkikName} Analizi` };
+    }
+ 
+    // --- RENDER DİNAMİK TABLOLAR ---
+    function renderResultBlock(res, container, typePrefix) {
+        const div = document.createElement('div');
+        div.className = 'result-block';
+        
+        let actMonths = []; 
+        if(res.compare) {
+            for(let m=2; m<=APP.monthCount; m++) {
+                if(res.data[0] && res.data[0].history && res.data[0].history[m] !== undefined) actMonths.push(m);
+            }
+        }
+
+        // DÜZELTME: Fark sütunu başlığı % olarak değişti
+        let thHtml = `<tr><th>Kategori</th><th>1. Ay Değer</th><th>% Pay</th>`;
+        actMonths.forEach(m => { thHtml += `<th class="month-col">${m}. Ay Değer</th><th>% Pay</th><th>Fark(1-${m}) %</th>`; });
+        thHtml += `</tr>`;
+
+        div.innerHTML = `
+            <div class="result-header"><strong>${res.title}</strong></div>
+            <div id="chartContainer_${typePrefix}_${res.uniqueId}" class="gen-chart-container" style="display:none; height:300px; margin-bottom:15px; border:1px solid #eee; padding:10px;">
+                <canvas id="chart_${typePrefix}_${res.uniqueId}"></canvas>
+            </div>
+            <div class="table-wrapper"><table id="tbl_${typePrefix}_${res.uniqueId}"><thead>${thHtml}</thead><tbody></tbody></table></div>
+        `;
+        container.appendChild(div);
+
+        const tb = document.getElementById(`tbl_${typePrefix}_${res.uniqueId}`);
+        let html = "";
+        res.data.forEach(d => {
+            let cls = d.isOther ? 'row-others' : '';
+            let r = `<tr class="${cls}"><td>${d.category}</td><td>${d.value.toLocaleString()}</td><td>%${d.percent}</td>`;
+            actMonths.forEach(m => {
+                let hm = d.history[m] || {val:0, pct:0, diff:0};
+                // DÜZELTME: Yeni Yüzdelik Ok hesaplayıcısı kullanılıyor
+                r += `<td class="month-col">${hm.val.toLocaleString()}</td><td>%${hm.pct}</td><td>${getPctArrow(d.value, hm.val)}</td>`;
+            });
+            html += r + "</tr>";
+        });
+        
+        let tRow = `<tr class="row-total"><td>GENEL TOPLAM</td><td>${res.total.toLocaleString()}</td><td>%100</td>`;
+        actMonths.forEach(m => {
+            let ht = res.hTotals[m] || 0;
+            // DÜZELTME: Yeni Yüzdelik Ok hesaplayıcısı kullanılıyor
+            tRow += `<td class="month-col">${ht.toLocaleString()}</td><td>%100</td><td>${getPctArrow(res.total, ht)}</td>`;
+        });
+        
+        tb.querySelector('tbody').innerHTML = html + tRow + "</tr>";
+
+        const ctx = document.getElementById(`chart_${typePrefix}_${res.uniqueId}`).getContext('2d');
+        let lbl=[], v1=[];
+        res.data.forEach(d => { if(!d.isOther && d.category!=='GENEL TOPLAM') { lbl.push(d.category); v1.push(d.value); } });
+        let dsets = [{label:'1. Ay', data:v1, backgroundColor:'#3b82f6'}]; 
+        let colors = ['#94a3b8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'];
+        actMonths.forEach((m, i) => {
+            let vm = []; res.data.forEach(d => { if(!d.isOther && d.category!=='GENEL TOPLAM') vm.push(d.history[m].val); });
+            dsets.push({label:`${m}. Ay`, data:vm, backgroundColor:colors[i%colors.length]});
+        });
+        new Chart(ctx, { type:'bar', data:{labels:lbl, datasets:dsets}, options:{responsive:true, maintainAspectRatio:false} });
+    }
+
+    function renderRadiologyTableUI(res, container) {
+        const div = document.createElement('div');
+        div.className = 'result-block';
+        
+        let actMonths = []; 
+        if(res.compare) {
+            for(let m=2; m<=APP.monthCount; m++) {
+                if(res.data[0] && res.data[0].history && res.data[0].history[m] !== undefined) actMonths.push(m);
+            }
+        }
+
+        let tType = res.tTypeOnly; 
+
+        let thHtml = `<tr><th>Branş</th><th>Doktor</th><th>1. Ay Havuz Hasta Sayısı</th><th>1. Ay Doktor Hasta Sayısı</th>`;
+        thHtml += `<th>1. Ay Dr. ${tType} Sayısı</th><th>1. Ay %Dr</th><th>1. Ay %Br</th>`;
+        
+        actMonths.forEach(m => {
+            // DÜZELTME: Hastabaşı raporuna da % Fark sütunu başlığı eklendi
+            thHtml += `<th class="month-col">${m}. Ay Dr. ${tType} Sayısı</th><th>Fark(1-${m}) %</th>`;
+        });
+        thHtml += `</tr>`;
+
+        div.innerHTML = `
+            <div class="result-header"><strong>${res.title}</strong></div>
+            <div id="chartContainer_rad_${res.uniqueId}" class="rad-chart-container" style="display:none; height:300px; margin-bottom:15px; border:1px solid #eee; padding:10px;">
+                <canvas id="chart_rad_${res.uniqueId}"></canvas>
+            </div>
+            <div class="table-wrapper"><table id="tbl_rad_${res.uniqueId}"><thead>${thHtml}</thead><tbody></tbody></table></div>
+        `;
+        container.appendChild(div);
+
+        const tb = document.getElementById(`tbl_rad_${res.uniqueId}`);
+        
+        let html = "";
+        res.data.forEach(d => {
+            let r = `<tr class="${d.isOther?'row-others':''}"><td>${d.brans}</td><td>${d.doktor}</td><td style="color:#666">${d.branchPool}</td><td><b>${d.total}</b></td>`;
+            r += `<td>${d[tType]}</td><td style="background:#ecfdf5">%${d[tType+'P']}</td><td style="background:#d1fae5">%${d[tType+'BrP']}</td>`;
+
+            actMonths.forEach(m => {
+                let hm = d.history[m] || {};
+                let hVal = hm[tType] || 0;
+                let currentVal = d[tType] || 0;
+                // DÜZELTME: Hastabaşı raporuna Yüzdelik Ok değerleri basılıyor
+                r += `<td class="month-col">${hVal}</td><td>${getPctArrow(currentVal, hVal)}</td>`;
+            });
+            html += r + "</tr>";
+        });
+        
+        tb.querySelector('tbody').innerHTML = html;
+
+        const ctx = document.getElementById(`chart_rad_${res.uniqueId}`).getContext('2d');
+        let lbl=[], v1=[];
+        res.data.forEach(d => { if(!d.isOther) { lbl.push(d.doktor); v1.push(d[tType]); } });
+        let dsets = [{label:'1. Ay', data:v1, backgroundColor:'#3b82f6'}]; 
+        let colors = ['#94a3b8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'];
+        actMonths.forEach((m, i) => {
+            let vm = []; res.data.forEach(d => { if(!d.isOther) vm.push(d.history[m][tType]); });
+            dsets.push({label:`${m}. Ay`, data:vm, backgroundColor:colors[i%colors.length]});
+        });
+        new Chart(ctx, { type:'bar', data:{labels:lbl, datasets:dsets}, options:{responsive:true, maintainAspectRatio:false} });
+    }
+ 
+    function runRepeated() {
+        let p1 = APP.months[1];
+        if(!p1 || p1.filtered.length === 0) { alert("1. Ay için veri yok."); return; }
+ 
+        const chks = document.querySelectorAll('#repCols input:checked');
+        if(chks.length===0) { alert("Sütun seçiniz."); return; }
+        
+        const cols = Array.from(chks).map(c=>c.value);
+        const srvOptions = document.getElementById('repServiceCol').selectedOptions;
+        const srvCols = Array.from(srvOptions).map(o => o.value).filter(v => v !== "");
+        const min = parseInt(document.getElementById('repMin').value);
+        const limit = parseInt(document.getElementById('repLimit').value) || 0;
+        
+        let tCol = document.getElementById('mapTetkikTuru').value;
+        const selectedTetkikler = Array.from(document.getElementById('repTetkikFilter').selectedOptions).map(o => o.value);
+
+        let activeData = p1.filtered.filter(r => {
+            let t = p1.isOldFormat ? 'DİĞER' : (r['Tetkik Türü_STD'] || r[tCol]);
+            return selectedTetkikler.length === 0 || selectedTetkikler.includes(t);
+        });
+
+        let map = {};
+        activeData.forEach(r => {
+            let k = cols.map(c=>r[c]).join(" | ");
+            if(!map[k]) map[k] = { count:0, services:[] };
+            map[k].count++;
+            if(srvCols.length > 0) {
+                let combined = srvCols.map(c => r[c]).filter(v => v).join(" - "); 
+                if(combined) map[k].services.push(combined);
+            }
+        });
+        
+        let res = Object.entries(map).filter(([k,v]) => v.count>=min).sort((a,b)=>b[1].count-a[1].count);
+        if(limit > 0 && res.length > limit) res = res.slice(0, limit);
+ 
+        const tb = document.getElementById('tblRepeated');
+        tb.querySelector('thead').innerHTML = `<tr><th>Anahtar (${cols.join('+')})</th><th>Tekrar</th>${srvCols.length>0?'<th>Hizmetler</th>':''}</tr>`;
+        let html="";
+        if(res.length === 0) html = "<tr><td colspan='3'>Kayıt bulunamadı.</td></tr>";
+        else res.forEach(([k,v]) => html += `<tr><td>${k}</td><td style="font-weight:bold;color:red">${v.count}</td>${srvCols.length>0?`<td>${v.services.join(', ')}</td>`:''}</tr>`);
+        
+        tb.querySelector('tbody').innerHTML = html;
+        document.getElementById('resRepeated').style.display = 'block';
+        let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
+        let tetkikName = selectedTetkikler.length > 0 ? selectedTetkikler.join(', ') : 'Tümü';
+        APP.lastRep = { data: res, cols, srvCol: srvCols.length>0, title: `${scopeName}-Tekrarlı/${tetkikName} Kayıtlar` };
+    }
+ 
+    function toggleAllCharts(type) {
+        const cls = type==='gen' ? '.gen-chart-container' : '.rad-chart-container';
+        document.querySelectorAll(cls).forEach(div => { div.style.display = div.style.display === 'none' ? 'block' : 'none'; });
+    }
+ 
+    function addToExport(type) {
+        if(type==='general' && APP.lastGenList && APP.lastGenList.length > 0) {
+            APP.lastGenList.forEach(item => {
+                let reportItem = {type:'gen', ...item};
+                const chartDiv = document.getElementById(`chartContainer_gen_${item.uniqueId}`); 
+                const canvas = document.getElementById(`chart_gen_${item.uniqueId}`);
+                if(chartDiv && chartDiv.style.display !== 'none') reportItem.img = canvas.toDataURL();
+                queue.push(reportItem);
+            });
+            alert(`${APP.lastGenList.length} analiz eklendi.`); renderQueue(); return;
+        }
+        if(type==='radiology' && APP.lastRadList && APP.lastRadList.length > 0) {
+            APP.lastRadList.forEach(item => {
+                let reportItem = {type:'rad', ...item};
+                const chartDiv = document.getElementById(`chartContainer_rad_${item.uniqueId}`);
+                const canvas = document.getElementById(`chart_rad_${item.uniqueId}`);
+                if(chartDiv && chartDiv.style.display !== 'none') reportItem.img = canvas.toDataURL();
+                queue.push(reportItem);
+            });
+            alert(`${APP.lastRadList.length} rapor eklendi.`); renderQueue(); return;
+        }
+        if(type==='statistics' && APP.lastStatList) {
+            let reportItem = {type:'stat', ...APP.lastStatList};
+            const canvas = document.getElementById('chart_stat');
+            reportItem.img = canvas.toDataURL();
+            queue.push(reportItem);
+            alert("İstatistiksel veriler eklendi."); renderQueue(); return;
+        }
+        if(type==='repeated' && APP.lastRep) { queue.push({type:'rep', ...APP.lastRep}); alert("Eklendi."); renderQueue(); }
+    }
+    
+    function renderQueue() {
+        const qDiv = document.getElementById('exportQueue');
+        if(queue.length === 0) { qDiv.innerHTML = '<em style="color:#94a3b8;">Kuyruk boş.</em>'; return; }
+        let html = '';
+        queue.forEach((item, idx) => { html += `<div class="q-chip"><span>#${idx+1} ${item.title}</span><span class="del" onclick="removeFromQueue(${idx})">&times;</span></div>`; });
+        qDiv.innerHTML = html;
+    }
+    function removeFromQueue(idx) { queue.splice(idx, 1); renderQueue(); }
+    
+    function openPreview() {
+        if(queue.length===0) return alert("Boş");
+        const b = document.getElementById('previewBody'); b.innerHTML="";
+        queue.forEach(q => { b.innerHTML += `<h4>${q.title}</h4>` + (q.img?`<img src="${q.img}" style="max-width:100%;height:200px">`:'') + `<hr>`; });
+        document.getElementById('previewModal').style.display='block';
+    }
+ 
+    function downloadExcel() {
+        if(!confirm("Excel indirmek istiyor musunuz?")) return;
+        if(queue.length===0) return alert("Kuyruk boş");
+        let wb = XLSX.utils.book_new();
+        queue.forEach((q, i) => {
+            let ws_data = [];
+            
+            if(q.type==='stat') {
+                let h = ['Branş','Doktor'];
+                q.validMonths.forEach(m => h.push(`${m}. Ay Değer`));
+                h.push('Ortalama', 'Max', 'Min', 'Tüm Aylar Toplamı');
+                ws_data.push(h);
+
+                q.data.forEach(d => {
+                    let r = [d.brans, d.doktor];
+                    q.validMonths.forEach(m => r.push(d.history[m]||0));
+                    r.push(d.avg, d.max, d.min, d.totalSum);
+                    ws_data.push(r);
+                });
+            }
+            else {
+                let actMonths = []; 
+                if(q.compare) {
+                    for(let m=2; m<=APP.monthCount; m++) {
+                        if(q.data[0] && q.data[0].history && q.data[0].history[m] !== undefined) actMonths.push(m);
+                    }
+                }
+
+                if(q.type==='gen') {
+                    let h = ['Kategori', '1. Ay Değer', '1. Ay %'];
+                    actMonths.forEach(m => { h.push(`${m}. Ay Değer`); h.push(`${m}. Ay %`); h.push(`Fark(1-${m}) %`); });
+                    ws_data.push(h);
+
+                    q.data.forEach(d => {
+                        let r = [d.category, d.value, d.percent];
+                        actMonths.forEach(m => { 
+                            r.push(d.history[m].val); r.push(d.history[m].pct); 
+                            r.push(getPctArrowText(d.value, d.history[m].val)); // EXCEL'E OKLU YÜZDE
+                        });
+                        ws_data.push(r);
+                    });
+
+                    let tr = ['GENEL TOPLAM', q.total, '100%'];
+                    actMonths.forEach(m => { 
+                        let ht = q.hTotals[m]||0; tr.push(ht); tr.push('100%'); 
+                        tr.push(getPctArrowText(q.total, ht)); // EXCEL'E OKLU YÜZDE
+                    });
+                    ws_data.push(tr);
+
+                } else if(q.type==='rad') {
+                    let tType = q.tTypeOnly;
+                    let h = ['Branş','Doktor','1. Ay Havuz Hasta Sayısı','1. Ay Doktor Hasta Sayısı'];
+                    h.push(`1. Ay Dr. ${tType} Sayısı`); h.push('1. Ay %Dr'); h.push('1. Ay %Br');
+                    actMonths.forEach(m => { h.push(`${m}. Ay Dr. ${tType} Sayısı`); h.push(`Fark(1-${m}) %`); });
+                    ws_data.push(h);
+
+                    q.data.forEach(d => {
+                        let r = [d.brans, d.doktor, d.branchPool, d.total];
+                        r.push(d[tType]); r.push(d[tType+'P']); r.push(d[tType+'BrP']);
+                        actMonths.forEach(m => { 
+                            let hm = d.history[m]||{}; 
+                            let hVal = hm[tType]||0;
+                            r.push(hVal); 
+                            r.push(getPctArrowText(d[tType], hVal)); // EXCEL'E OKLU YÜZDE
+                        });
+                        ws_data.push(r);
+                    });
+                } else if(q.type==='rep') {
+                    ws_data.push(['Anahtar', 'Tekrar', 'Hizmetler']);
+                    q.data.forEach(d => ws_data.push([d[0], d[1].count, q.srvCol?d[1].services.join(', '):'']));
+                }
+            }
+            let ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, `Rapor_${i+1}`);
+        });
+        XLSX.writeFile(wb, "Analiz_Raporu.xlsx");
+    }
+
+    function downloadPPT() {
+        if(!confirm("PowerPoint indirmek istiyor musunuz?")) return;
+        if(queue.length===0) return alert("Kuyruk boş");
+        
+        let monthLabels = {};
+        for(let i=1; i<=APP.monthCount; i++) {
+            let el = document.getElementById(`lblM${i}`);
+            monthLabels[i] = el ? el.value : `${i}. Ay`;
+        }
+
+        try {
+            let pres = new PptxGenJS();
+            let currentYear = new Date().getFullYear();
+            
+            let coverSlide = pres.addSlide();
+            coverSlide.addText(`${monthLabels[2]?monthLabels[2].split(' ')[0].toUpperCase():''} - ${monthLabels[1].split(' ')[0].toUpperCase()} ${currentYear}\nSDS ANALİZ RAPORU`, {
+                x: 0, y: '40%', w: '100%', h: 1.5, fontSize: 32, bold: true, color: '1e293b', align: 'center', valign: 'middle'
+            });
+
+            queue.forEach(item => {
+                let headers = [], rows = []; let totalRow = [];
+                let slideTitle = item.title;
+
+                if(item.type === 'stat') {
+                    headers = ['Branş', 'Doktor'];
+                    item.validMonths.forEach(m => headers.push(`${monthLabels[m]}\nDeğer`));
+                    headers.push('Ortalama', 'Max', 'Min');
+                    
+                    item.data.forEach(d => {
+                        let r = [d.brans, d.doktor];
+                        item.validMonths.forEach(m => r.push(d.history[m]||0));
+                        r.push(d.avg, d.max, d.min);
+                        rows.push(r);
+                    });
+                }
+                else {
+                    let actMonths = []; 
+                    if(item.compare) {
+                        for(let m=2; m<=APP.monthCount; m++) {
+                            if(item.data[0] && item.data[0].history && item.data[0].history[m] !== undefined) actMonths.push(m);
+                        }
+                    }
+
+                    if(item.type === 'gen') {
+                        headers = ['Kategori', `${monthLabels[1]}\nDeğer`, '%']; 
+                        actMonths.forEach(m => { headers.push(`${monthLabels[m]}\nDeğer`); headers.push(`%`); headers.push(`Fark %`); });
+                        
+                        item.data.forEach(d => { 
+                            let r = [d.category, d.value, d.percent]; 
+                            actMonths.forEach(m => { 
+                                r.push(d.history[m].val); r.push(d.history[m].pct); 
+                                r.push(getPctArrowText(d.value, d.history[m].val)); 
+                            });
+                            rows.push(r); 
+                        });
+                        
+                        totalRow = ['GENEL TOPLAM', item.total, '100%']; 
+                        actMonths.forEach(m => { 
+                            let ht=item.hTotals[m]||0; totalRow.push(ht); totalRow.push('100%'); 
+                            totalRow.push(getPctArrowText(item.total, ht)); 
+                        });
+
+                    } else if(item.type === 'rad') {
+                        let tType = item.tTypeOnly;
+                        
+                        headers = ['Branş', 'Doktor', 'Havuz\nSayısı', 'Doktor\nHasta'];
+                        headers.push(`${monthLabels[1].substring(0,3)} Dr.${tType}\nSayısı`); 
+                        headers.push('Dr\n%'); 
+                        headers.push('Br\n%'); 
+                        
+                        actMonths.forEach(m => { 
+                            headers.push(`${monthLabels[m].substring(0,3)} Dr.${tType}\nSayısı`); 
+                            headers.push(`Fark %`); 
+                        });
+                        
+                        item.data.forEach(d => {
+                            let r = [d.brans, d.doktor, d.branchPool, d.total];
+                            r.push(d[tType]); r.push(d[tType+'P']); r.push(d[tType+'BrP']);
+                            actMonths.forEach(m => {
+                                let hm = d.history[m]||{};
+                                let hVal = hm[tType]||0;
+                                r.push(hVal); 
+                                r.push(getPctArrowText(d[tType], hVal)); 
+                            });
+                            rows.push(r);
+                        });
+
+                    } else if(item.type === 'rep') {
+                        headers = ['Anahtar', 'Tekrar']; if(item.srvCol) headers.push('Hizmetler');
+                        item.data.forEach(d => { let r=[d[0], d[1].count]; if(item.srvCol) r.push(d[1].services.join(', ')); rows.push(r); });
+                    }
+                }
+
+                let LIMIT_WITH_IMG = 6; let LIMIT_NO_IMG = 13; if (item.type === 'rep') { LIMIT_WITH_IMG = 10; LIMIT_NO_IMG = 10; } 
+                let currentRow = 0; let slideCount = 0;
+                if(rows.length === 0) rows.push(['Veri Yok']); if (totalRow.length > 0) rows.push(totalRow);
+                
+                while(currentRow < rows.length) {
+                    let slide = pres.addSlide(); 
+                    let isFirst = slideCount === 0; 
+                    let hasImg = isFirst && item.img; 
+                    let limit = hasImg ? LIMIT_WITH_IMG : LIMIT_NO_IMG;
+                    
+                    slide.addText(slideTitle + (isFirst ? "" : " (Devam)"), { x:0.5, y:0.3, fontSize:16, bold:true, color:'363636' });
+                    let tableY = 0.8; if(hasImg) { slide.addImage({ data:item.img, x:0.5, y:0.6, w:5, h:2.0 }); tableY = 2.8; }
+                    
+                    let chunk = rows.slice(currentRow, currentRow + limit);
+                    
+                    let fontS = headers.length > 8 ? 10 : 12;
+                    let tableData = [headers.map(h => ({text:h, options:{fill:'eeeeee', bold:true, fontSize:fontS}}))];
+                    
+                    chunk.forEach((r, idx) => { 
+                        let isTotalRow = (currentRow + idx === rows.length - 1) && totalRow.length > 0; 
+                        let rowStyle = isTotalRow ? {fill:'cbd5e1', bold:true} : {}; 
+                        
+                        // YENİ EKLENEN RENKLENDİRME MOTORU (PPT İÇİN)
+                        let rowCells = r.map(c => {
+                            let textStr = String(c);
+                            let cellOptions = {...rowStyle, fontSize:fontS};
+                            
+                            // Metnin içinde ok varsa rengini ve kalınlığını ayarla
+                            if (textStr.includes('▲')) {
+                                cellOptions.color = '16a34a'; // Yeşil
+                                cellOptions.bold = true;
+                            } else if (textStr.includes('▼')) {
+                                cellOptions.color = 'dc2626'; // Kırmızı
+                                cellOptions.bold = true;
+                            } else if (textStr === '-%0' || textStr === '-%0.0') {
+                                cellOptions.color = '64748b'; // Gri
+                            }
+                            
+                            return {text: textStr, options: cellOptions};
+                        });
+
+                        tableData.push(rowCells); 
+                    });
+                    
+                    slide.addTable(tableData, { x:0.2, y:tableY, w:9.6, border:{pt:0.5, color:'dddddd'}, rowH:0.5 });
+                    currentRow += limit; slideCount++;
+                }
+            });
+            pres.writeFile({ fileName: "Analiz_Sunum_Multi.pptx" }).then(() => { console.log("PPT İndirme Başladı"); });
+        } catch (e) { console.error(e); alert("Hata: " + e.message); }
+    }
+ 
+    function downloadWord() {
+        if(!confirm("Word İndir? (Çoklu Ay İçin Excel/PPT daha sağlıklıdır)")) return;
+        downloadExcel();
+    }
+    
+    function saveState(){ alert("Ayarlar Kaydedildi"); }
+</script>
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column; backdrop-filter: blur(2px);">
+    <div style="font-size:3rem; margin-bottom:15px; animation: spin 1s linear infinite;">⏳</div>
+    <div style="font-size:1.2rem; font-weight:bold; color:var(--primary); background:white; padding:10px 20px; border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+        Filtre değişimi uygulanıyor, lütfen bekleyiniz...
+    </div>
+</div>
+</body>
+</html>

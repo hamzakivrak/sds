@@ -272,12 +272,32 @@
         </div>
  
         <div id="tab-statistics" class="tab-content">
+            <div class="card" style="border:2px solid #16a34a;">
+                <h3 style="color:#16a34a; margin-top:0;">⚙️ Dinamik Sütun Eşleştirme (İstatistiksel Analiz)</h3>
+                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:300px; background:#f0fdf4; padding:15px; border-radius:6px; border:1px solid #bbf7d0;">
+                        <h4 style="margin-top:0; color:#166534; border-bottom:1px solid #dcfce7; padding-bottom:5px;">Yeni Versiyon (Tek Sütunlu)</h4>
+                        <label>Branş Sütunu:</label><select id="statMapBrans"></select>
+                        <label>Doktor Sütunu:</label><select id="statMapDoktor"></select>
+                        <label>Tetkik Türü Sütunu:</label><select id="statMapTetkikTuru"></select>
+                        <label>Adet Sütunu:</label><select id="statMapTetkikAdet"></select>
+                    </div>
+                    
+                    <div style="flex:1; min-width:300px; background:#fffbeb; padding:15px; border-radius:6px; border:1px solid #fde68a;">
+                        <h4 style="margin-top:0; color:#b45309; border-bottom:1px solid #fef3c7; padding-bottom:5px;">Eski Versiyon (Ayrı Sütunlu)</h4>
+                        <label>Branş Sütunu:</label><select id="statOldMapBrans"></select>
+                        <label>Doktor Sütunu:</label><select id="statOldMapDoktor"></select>
+                        <div style="display:flex; gap:10px; margin-top:5px;">
+                            <div style="flex:1"><label>USG Sütunu:</label><select id="statOldMapUSG"></select></div>
+                            <div style="flex:1"><label>MR Sütunu:</label><select id="statOldMapMR"></select></div>
+                            <div style="flex:1"><label>BT Sütunu:</label><select id="statOldMapBT"></select></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h3>İstatistiksel Analiz (Tüm Aylar Geneli)</h3>
-                <div style="background:#f0fdf4; padding:10px; border-radius:6px; margin-bottom:15px; border-left:4px solid #16a34a; font-size:0.85rem;">
-                    Bu modül yüklenen <b>tüm ayların</b> verilerini tarayarak ortalama, standart sapma ve güven aralığı hesaplar. <i>(Sütun eşleştirmelerini Hastabaşı sekmesinden alır).</i>
-                </div>
-                
                 <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid var(--border);">
                     <label style="color:var(--primary); font-weight:bold;">🔍 Analiz Edilecek Teftiş/Tetkik Türü</label>
                     <select id="statTetkikFilter" multiple style="height: 80px;" onchange="updateStatSort()"></select>
@@ -307,8 +327,9 @@
                            <option value="2.576">%99 Güven Aralığı</option>
                        </select>
                     </div>
-                    <div style="grid-column: span 2; display:flex; align-items:flex-end;">
-                       <button class="btn btn-success" onclick="runStatisticalAnalysis()" style="width:100%; height:42px;">📉 İstatistikleri Çıkar</button>
+                    <div style="grid-column: span 2; display:flex; gap:10px; align-items:flex-end;">
+                       <button class="btn btn-success" onclick="runStatisticalAnalysis(false)" style="flex:1; height:42px;">📉 Seçileni Çıkar</button>
+                       <button class="btn btn-info" onclick="runStatisticalAnalysis(true)" style="flex:1; height:42px;">🚀 Tümünü Toplu Dök</button>
                     </div>
                 </div>
             </div>
@@ -316,12 +337,12 @@
             <div id="resStatistics" class="card" style="display:none;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:10px;">
                     <h3>İstatistiksel Veriler</h3>
-                    <button class="btn btn-warning btn-sm" onclick="addToExport('statistics')">➕ Rapora Ekle</button>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-secondary btn-sm" onclick="toggleAllCharts('stat')">📊 Grafikleri Aç/Kapat</button>
+                        <button class="btn btn-warning btn-sm" onclick="addToExport('statistics')">➕ Rapora Ekle</button>
+                    </div>
                 </div>
-                <div id="chartContainer_stat" style="height:300px; margin-bottom:15px; border:1px solid #eee; padding:10px;">
-                    <canvas id="chart_stat"></canvas>
-                </div>
-                <div class="table-wrapper"><table id="tblStatistics"><thead></thead><tbody></tbody></table></div>
+                <div id="statResultsContainer" style="overflow-x:auto;"></div>
             </div>
         </div>
  
@@ -968,7 +989,8 @@
         let pNew = Object.values(APP.months).find(m => m && !m.isOldFormat && m.data && m.data.length > 0);
         if(pNew) {
             const headers = Object.keys(pNew.data[0]).filter(h => !h.startsWith('_') && !h.endsWith('_STD'));
-            ['anlCat','anlVal','mapBrans','mapDoktor','mapTetkikTuru','mapTetkikAdet','repServiceCol'].forEach(id => {
+            ['anlCat','anlVal','mapBrans','mapDoktor','mapTetkikTuru','mapTetkikAdet','repServiceCol', 
+             'statMapBrans', 'statMapDoktor', 'statMapTetkikTuru', 'statMapTetkikAdet'].forEach(id => {
                 let el = document.getElementById(id);
                 if(el) {
                     let cur = Array.from(el.selectedOptions).map(o=>o.value);
@@ -1014,7 +1036,8 @@
         let pOld = Object.values(APP.months).find(m => m && m.isOldFormat && m.data && m.data.length > 0);
         if (pOld) {
             let oldHeaders = Object.keys(pOld.data[0]).filter(h => !h.startsWith('_') && !h.endsWith('_STD'));
-            ['oldAnlCat','oldAnlVal','oldMapBrans','oldMapDoktor','oldMapUSG','oldMapMR','oldMapBT'].forEach(id => {
+            ['oldAnlCat','oldAnlVal','oldMapBrans','oldMapDoktor','oldMapUSG','oldMapMR','oldMapBT',
+             'statOldMapBrans', 'statOldMapDoktor', 'statOldMapUSG', 'statOldMapMR', 'statOldMapBT'].forEach(id => {
                 let el = document.getElementById(id);
                 if(el) {
                     let cur = Array.from(el.selectedOptions).map(o=>o.value);
@@ -1056,6 +1079,8 @@
             }
         }
     }
+
+   
  
     function getPctArrow(val1, val2) {
         if (val2 === 0 && val1 === 0) return `<span class="arrow-neu" style="color:#64748b;">-%0</span>`;
@@ -1075,7 +1100,7 @@
         return `-%0.0`;
     }
  
-    function autoMapRadiologyColumns() {
+     function autoMapRadiologyColumns() {
         let pNew = Object.values(APP.months).find(m => m && !m.isOldFormat && m.data && m.data.length > 0);
         if(pNew) {
             const headers = Object.keys(pNew.data[0]);
@@ -1124,6 +1149,17 @@
                 document.getElementById('oldAnlCat').value = brCol;
             }
         }
+
+        // İstatistik modülü eşleşmelerini Hastabaşından otomatik kopyala (eğer boşsa)
+        ['Brans', 'Doktor', 'TetkikTuru', 'TetkikAdet'].forEach(id => {
+            let val = document.getElementById('map' + id).value;
+            if(val && !document.getElementById('statMap' + id).value) document.getElementById('statMap' + id).value = val;
+        });
+        ['Brans', 'Doktor', 'USG', 'MR', 'BT'].forEach(id => {
+            let val = document.getElementById('oldMap' + id).value;
+            if(val && !document.getElementById('statOldMap' + id).value) document.getElementById('statOldMap' + id).value = val;
+        });
+
         updateTetkikList();
     }
  
@@ -1576,19 +1612,19 @@
     }
  
     // --- İSTATİSTİKSEL ANALİZ GÜNCELLEMESİ ---
-    function runStatisticalAnalysis() {
+    function runStatisticalAnalysis(runAll = false) {
         const cols = {
-            brans: document.getElementById('mapBrans').value,
-            dr: document.getElementById('mapDoktor').value,
-            tetkikTuru: document.getElementById('mapTetkikTuru').value, 
-            adet: document.getElementById('mapTetkikAdet').value
+            brans: document.getElementById('statMapBrans').value,
+            dr: document.getElementById('statMapDoktor').value,
+            tetkikTuru: document.getElementById('statMapTetkikTuru').value, 
+            adet: document.getElementById('statMapTetkikAdet').value
         };
         const oldCols = {
-            brans: document.getElementById('oldMapBrans').value,
-            dr: document.getElementById('oldMapDoktor').value,
-            usg: document.getElementById('oldMapUSG').value,
-            mr: document.getElementById('oldMapMR').value,
-            bt: document.getElementById('oldMapBT').value
+            brans: document.getElementById('statOldMapBrans').value,
+            dr: document.getElementById('statOldMapDoktor').value,
+            usg: document.getElementById('statOldMapUSG').value,
+            mr: document.getElementById('statOldMapMR').value,
+            bt: document.getElementById('statOldMapBT').value
         };
  
         let validMonths = [];
@@ -1600,88 +1636,112 @@
         const focusVal = document.getElementById('statFocus').value;
         const groupType = document.getElementById('statGroup').value;
         const zScore = parseFloat(document.getElementById('statConf').value);
-        const selectedTetkikler = Array.from(document.getElementById('statTetkikFilter').selectedOptions).map(o => o.value);
-        let targetTetkik = selectedTetkikler.length > 0 ? selectedTetkikler[0] : 'USG';
+        
+        let targetKeys = [];
+        if (runAll) {
+            targetKeys = Array.from(document.getElementById('statTetkikFilter').options).map(o => o.value);
+        } else {
+            targetKeys = Array.from(document.getElementById('statTetkikFilter').selectedOptions).map(o => o.value);
+        }
+        if(targetKeys.length === 0) targetKeys = ['USG']; // Fallback
  
-        let masterMap = {};
-        validMonths.forEach(mIndex => {
-            let mData = getRadiologyAggregates(APP.months[mIndex], cols, oldCols, targetTetkik); 
-            
-            mData.forEach(d => {
-                let key, labelBrans, labelDoktor;
-                if (groupType === 'branch') {
-                    key = d.brans; labelBrans = d.brans; labelDoktor = '-';
-                } else if (groupType === 'doctor') {
-                    key = getLastTwoWords(d.doktor); labelBrans = '-'; labelDoktor = d.doktor;
-                } else {
-                    key = d.brans + "||" + getLastTwoWords(d.doktor); labelBrans = d.brans; labelDoktor = d.doktor;
-                }
+        APP.lastStatList = [];
+        const container = document.getElementById('statResultsContainer');
+        container.innerHTML = "";
 
-                // Önceden var olan anahtarı bulma (Son iki kelime uyumu vb.)
-                let existingKey = Object.keys(masterMap).find(k => {
-                    if (groupType === 'branch') return k === key;
+        targetKeys.forEach((targetTetkik, idx) => {
+            let masterMap = {};
+            validMonths.forEach(mIndex => {
+                let mData = getRadiologyAggregates(APP.months[mIndex], cols, oldCols, targetTetkik); 
+                
+                mData.forEach(d => {
+                    let key, labelBrans, labelDoktor;
+                    if (groupType === 'branch') {
+                        key = d.brans; labelBrans = d.brans; labelDoktor = '-';
+                    } else if (groupType === 'doctor') {
+                        key = getLastTwoWords(d.doktor); labelBrans = '-'; labelDoktor = d.doktor;
+                    } else {
+                        key = d.brans + "||" + getLastTwoWords(d.doktor); labelBrans = d.brans; labelDoktor = d.doktor;
+                    }
+
+                    let existingKey = Object.keys(masterMap).find(k => {
+                        if (groupType === 'branch') return k === key;
+                        let kDrLast2 = getLastTwoWords(masterMap[k].doktor);
+                        let currDrLast2 = getLastTwoWords(labelDoktor);
+                        if (groupType === 'doctor') return kDrLast2 === currDrLast2 && currDrLast2.length > 2;
+                        return masterMap[k].brans === d.brans && kDrLast2 === currDrLast2 && currDrLast2.length > 2;
+                    });
+
+                    let finalKey = existingKey ? existingKey : key;
+                    if(!masterMap[finalKey]) masterMap[finalKey] = { brans: labelBrans, doktor: labelDoktor, history: {} };
                     
-                    let kDrLast2 = getLastTwoWords(masterMap[k].doktor);
-                    let currDrLast2 = getLastTwoWords(labelDoktor);
-                    
-                    if (groupType === 'doctor') return kDrLast2 === currDrLast2 && currDrLast2.length > 2;
-                    return masterMap[k].brans === d.brans && kDrLast2 === currDrLast2 && currDrLast2.length > 2;
+                    let valToAdd = focusVal === 'tetkik' ? (d[targetTetkik] || 0) : (d.total || 0);
+                    masterMap[finalKey].history[mIndex] = (masterMap[finalKey].history[mIndex] || 0) + valToAdd;
                 });
-
-                let finalKey = existingKey ? existingKey : key;
-                
-                if(!masterMap[finalKey]) masterMap[finalKey] = { brans: labelBrans, doktor: labelDoktor, history: {} };
-                
-                let valToAdd = focusVal === 'tetkik' ? (d[targetTetkik] || 0) : (d.total || 0);
-                
-                // Branş bazlı toplamlarda aynı branştaki doktorları toplayarak ilerle
-                masterMap[finalKey].history[mIndex] = (masterMap[finalKey].history[mIndex] || 0) + valToAdd;
             });
-        });
- 
-        let resultData = [];
-        Object.keys(masterMap).forEach(k => {
-            let obj = masterMap[k];
-            let vals = validMonths.map(m => obj.history[m] || 0);
-            let n = vals.length;
-            let sum = vals.reduce((a,b)=>a+b, 0);
-            let mean = n > 0 ? sum / n : 0;
-            
-            // Standart Sapma Hesaplaması (Örneklem Varyansı: n-1)
-            let variance = n > 1 ? vals.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / (n - 1) : 0;
-            let sd = Math.sqrt(variance);
-            
-            // Güven Aralığı Hesaplaması (Z * (SD / √N))
-            let margin = n > 0 ? zScore * (sd / Math.sqrt(n)) : 0;
+     
+            let resultData = [];
+            Object.keys(masterMap).forEach(k => {
+                let obj = masterMap[k];
+                let vals = validMonths.map(m => obj.history[m] || 0);
+                let n = vals.length;
+                let sum = vals.reduce((a,b)=>a+b, 0);
+                let mean = n > 0 ? sum / n : 0;
+                
+                let variance = n > 1 ? vals.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / (n - 1) : 0;
+                let sd = Math.sqrt(variance);
+                let margin = n > 0 ? zScore * (sd / Math.sqrt(n)) : 0;
 
-            obj.avg = mean.toFixed(1);
-            obj.sd = sd.toFixed(2);
+                obj.avg = mean.toFixed(1);
+                obj.sd = sd.toFixed(2);
+                let lower = (mean - margin).toFixed(1);
+                if (parseFloat(lower) < 0) lower = "0.0";
+                let upper = (mean + margin).toFixed(1);
+                obj.ci = `${lower} - ${upper}`;
+                obj.max = Math.max(...vals);
+                obj.min = Math.min(...vals);
+                obj.totalSum = sum;
+                resultData.push(obj);
+            });
+     
+            resultData.sort((a,b) => (b.history[1] || 0) - (a.history[1] || 0));
+     
+            let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
+            let confPercent = zScore === 1.645 ? '%90' : (zScore === 1.96 ? '%95' : '%99');
+            let titleName = groupType === 'branch' ? 'Branş Bazlı' : (groupType === 'doctor' ? 'Hekim Bazlı' : 'Branş-Hekim');
+            let resTitle = `${scopeName}-${titleName} / ${targetTetkik} Analizi (${confPercent} GA)`;
+
+            let resObj = { data: resultData, validMonths, focus: focusVal, targetTetkik, title: resTitle, uniqueId: `stat_${idx}_${Date.now()}` };
+            APP.lastStatList.push(resObj);
             
-            let lower = (mean - margin).toFixed(1);
-            if (parseFloat(lower) < 0) lower = "0.0";
-            let upper = (mean + margin).toFixed(1);
-            
-            obj.ci = `${lower} - ${upper}`;
-            
-            obj.max = Math.max(...vals);
-            obj.min = Math.min(...vals);
-            obj.totalSum = sum;
-            resultData.push(obj);
+            renderStatTableUI(resObj, container, groupType);
         });
  
-        resultData.sort((a,b) => (b.history[1] || 0) - (a.history[1] || 0));
- 
+        document.getElementById('resStatistics').style.display = 'block';
+    }
+
+    function renderStatTableUI(res, container, groupType) {
+        const div = document.createElement('div');
+        div.className = 'result-block';
+
         let thHtml = `<tr><th>Branş</th><th>Doktor</th>`;
-        validMonths.forEach(m => thHtml += `<th class="month-col">${m}. Ay Değer</th>`);
+        res.validMonths.forEach(m => thHtml += `<th class="month-col">${m}. Ay Değer</th>`);
         thHtml += `<th style="background:#f1f5f9;">Ortalama</th><th style="background:#e0e7ff; color:#3730a3;">S.Sapma</th><th style="background:#ecfdf5; color:#065f46;">G.A. (Alt-Üst)</th><th style="color:#ca8a04;">Max</th><th style="color:#94a3b8;">Min</th><th>Toplam</th></tr>`;
- 
-        const tb = document.getElementById('tblStatistics');
-        tb.querySelector('thead').innerHTML = thHtml;
- 
+
+        div.innerHTML = `
+            <div class="result-header"><strong>${res.title}</strong></div>
+            <div id="chartContainer_stat_${res.uniqueId}" class="stat-chart-container" style="display:none; height:300px; margin-bottom:15px; border:1px solid #eee; padding:10px;">
+                <canvas id="chart_stat_${res.uniqueId}"></canvas>
+            </div>
+            <div class="table-wrapper"><table id="tbl_stat_${res.uniqueId}"><thead>${thHtml}</thead><tbody></tbody></table></div>
+        `;
+        container.appendChild(div);
+
+        const tb = document.getElementById(`tbl_stat_${res.uniqueId}`);
         let html = "";
-        resultData.forEach(r => {
+        res.data.forEach(r => {
             html += `<tr><td>${r.brans}</td><td>${r.doktor}</td>`;
-            validMonths.forEach(m => html += `<td class="month-col">${r.history[m]||0}</td>`);
+            res.validMonths.forEach(m => html += `<td class="month-col">${r.history[m]||0}</td>`);
             html += `<td style="background:#f8fafc; font-weight:bold;">${r.avg}</td>
                      <td style="background:#eef2ff; color:#3730a3;">±${r.sd}</td>
                      <td style="background:#f0fdf4; color:#065f46; font-size:0.75rem;">${r.ci}</td>
@@ -1690,27 +1750,18 @@
                      <td style="font-weight:bold; color:var(--primary);">${r.totalSum}</td></tr>`;
         });
         tb.querySelector('tbody').innerHTML = html;
- 
-        const ctx = document.getElementById('chart_stat').getContext('2d');
-        if(APP.charts['stat']) APP.charts['stat'].destroy();
+
+        const ctx = document.getElementById(`chart_stat_${res.uniqueId}`).getContext('2d');
+        let lbls = res.data.slice(0, 30).map(d => groupType === 'branch' ? d.brans : d.doktor);
+        let avgData = res.data.slice(0, 30).map(d => parseFloat(d.avg));
         
-        let lbls = resultData.slice(0, 30).map(d => groupType === 'branch' ? d.brans : d.doktor);
-        let avgData = resultData.slice(0, 30).map(d => parseFloat(d.avg));
+        let focusText = res.focus === 'tetkik' ? res.targetTetkik : 'Toplam Hasta';
         
-        let focusText = focusVal === 'tetkik' ? targetTetkik : 'Toplam Hasta';
-        
-        APP.charts['stat'] = new Chart(ctx, { 
+        new Chart(ctx, { 
             type: 'bar',
             data: { labels: lbls, datasets: [{ label: 'Ortalama ('+focusText+')', data: avgData, backgroundColor: '#10b981' }] }, 
             options: { responsive: true, maintainAspectRatio: false } 
         });
- 
-        document.getElementById('resStatistics').style.display = 'block';
- 
-        let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
-        let confPercent = zScore === 1.645 ? '%90' : (zScore === 1.96 ? '%95' : '%99');
-        let titleName = groupType === 'branch' ? 'Branş Bazlı' : (groupType === 'doctor' ? 'Hekim Bazlı' : 'Branş-Hekim');
-        APP.lastStatList = { data: resultData, validMonths, focus: focusVal, targetTetkik, title: `${scopeName}-${titleName} / ${targetTetkik} Analizi (${confPercent} GA)` };
     }
  
     function renderResultBlock(res, container, typePrefix) {
@@ -1877,8 +1928,8 @@
         APP.lastRep = { data: res, cols, srvCol: srvCols.length>0, title: `${scopeName}-Tekrarlı/${tetkikName} Kayıtlar` };
     }
  
-    function toggleAllCharts(type) {
-        const cls = type==='gen' ? '.gen-chart-container' : '.rad-chart-container';
+function toggleAllCharts(type) {
+        const cls = type==='gen' ? '.gen-chart-container' : (type==='rad' ? '.rad-chart-container' : '.stat-chart-container');
         document.querySelectorAll(cls).forEach(div => { div.style.display = div.style.display === 'none' ? 'block' : 'none'; });
     }
  
@@ -1903,12 +1954,15 @@
             });
             alert(`${APP.lastRadList.length} rapor eklendi.`); renderQueue(); return;
         }
-        if(type==='statistics' && APP.lastStatList) {
-            let reportItem = {type:'stat', ...APP.lastStatList};
-            const canvas = document.getElementById('chart_stat');
-            reportItem.img = canvas.toDataURL();
-            queue.push(reportItem);
-            alert("İstatistiksel veriler eklendi."); renderQueue(); return;
+        if(type==='statistics' && APP.lastStatList && APP.lastStatList.length > 0) {
+            APP.lastStatList.forEach(item => {
+                let reportItem = {type:'stat', ...item};
+                const chartDiv = document.getElementById(`chartContainer_stat_${item.uniqueId}`);
+                const canvas = document.getElementById(`chart_stat_${item.uniqueId}`);
+                if(chartDiv && chartDiv.style.display !== 'none') reportItem.img = canvas.toDataURL();
+                queue.push(reportItem);
+            });
+            alert(`${APP.lastStatList.length} istatistik raporu eklendi.`); renderQueue(); return;
         }
         if(type==='repeated' && APP.lastRep) { queue.push({type:'rep', ...APP.lastRep}); alert("Eklendi."); renderQueue(); }
     }

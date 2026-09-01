@@ -78,6 +78,7 @@
         .modal-content { background: white; margin: 5% auto; width: 600px; max-height: 80vh; border-radius: 8px; display: flex; flex-direction: column; padding:0; }
         .modal-body { padding: 15px; overflow-y: auto; flex: 1; }
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .toggle-switch { display: flex; align-items: center; gap: 10px; background: #e0f2fe; padding: 10px; border-radius: 6px; margin-bottom: 15px; color: #0369a1; }
         .toggle-switch input { width: auto; margin: 0; }
         
@@ -274,7 +275,7 @@
             <div class="card">
                 <h3>İstatistiksel Analiz (Tüm Aylar Geneli)</h3>
                 <div style="background:#f0fdf4; padding:10px; border-radius:6px; margin-bottom:15px; border-left:4px solid #16a34a; font-size:0.85rem;">
-                    Bu modül yüklenen <b>tüm ayların</b> verilerini tarayarak aşağıda seçtiğiniz Teftiş/Tetkik türünde doktor/branş bazlı ortalama, maksimum, minimum değerlerini hesaplar. <i>(Sütun eşleştirmelerini Hastabaşı sekmesinden alır).</i>
+                    Bu modül yüklenen <b>tüm ayların</b> verilerini tarayarak ortalama, standart sapma ve güven aralığı hesaplar. <i>(Sütun eşleştirmelerini Hastabaşı sekmesinden alır).</i>
                 </div>
                 
                 <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid var(--border);">
@@ -282,14 +283,31 @@
                     <select id="statTetkikFilter" multiple style="height: 80px;" onchange="updateStatSort()"></select>
                 </div>
 
-                <div class="grid-4">
+                <div class="grid-5">
                     <div>
-                       <label>Analiz Edilecek Tür (Odak)</label>
+                       <label>Gruplama Tipi</label>
+                       <select id="statGroup">
+                           <option value="both">Branş + Hekim</option>
+                           <option value="doctor">Sadece Hekim</option>
+                           <option value="branch">Sadece Branş</option>
+                       </select>
+                    </div>
+                    <div>
+                       <label>Analiz Edilecek Tür</label>
                        <select id="statFocus">
-                           <option value="total">Toplam Sayı</option>
+                           <option value="tetkik">Seçili Tetkik Sayısı</option>
+                           <option value="total">Toplam Hasta Sayısı</option>
                         </select>
                     </div>
-                    <div style="display:flex; align-items:flex-end;">
+                    <div>
+                       <label>Güven Aralığı</label>
+                       <select id="statConf">
+                           <option value="1.645">%90 Güven Aralığı</option>
+                           <option value="1.960" selected>%95 Güven Aralığı</option>
+                           <option value="2.576">%99 Güven Aralığı</option>
+                       </select>
+                    </div>
+                    <div style="grid-column: span 2; display:flex; align-items:flex-end;">
                        <button class="btn btn-success" onclick="runStatisticalAnalysis()" style="width:100%; height:42px;">📉 İstatistikleri Çıkar</button>
                     </div>
                 </div>
@@ -414,7 +432,6 @@
  
     // --- YARDIMCI FONKSİYONLAR ---
 
-    // TÜRKÇE KARAKTERLERİ KUSURSUZ EŞLEŞTİREN GÜVENLİ METİN KALKANI
     function getSafeStr(s) {
         if (!s) return "";
         return String(s)
@@ -456,7 +473,6 @@
         return n.trim();
     }
 
-    // SON 2 KELİME ÇEKME (Noktalama işaretlerini silerek temiz kelimeler)
     function getLastTwoWords(str) {
         if (!str) return "";
         let cleanStr = String(str).replace(/[^A-ZÇĞİÖŞÜa-zçğıöşü\s]/g, '').trim();
@@ -465,7 +481,6 @@
         return words.slice(-2).join(" ").toUpperCase();
     }
 
-    // BULANIK EŞLEŞTİRME (HASTA BAŞI İÇİN) - Son 2 Kelimeye Bakar
     function findDoctorMatch(hMap, brans, doktor) {
         let exactKey = brans + "||" + doktor;
         if (hMap[exactKey]) return hMap[exactKey];
@@ -475,11 +490,9 @@
             let parts = k.split("||");
             let d2 = parts[1] || "";
             let d2_last2 = getLastTwoWords(d2);
-            // Sadece son 2 kelime aynıysa ve yeterince uzunsa güvenli eşleşme
             if (d1_last2 === d2_last2 && d1_last2.length > 2) return hMap[k];
         }
         
-        // Son çare Substring
         let d1 = String(doktor).replace(/[^A-ZÇĞİÖŞÜ]/g, '');
         for (let k of Object.keys(hMap)) {
             let d2 = String(k.split("||")[1] || "").replace(/[^A-ZÇĞİÖŞÜ]/g, '');
@@ -488,7 +501,6 @@
         return null;
     }
 
-    // BULANIK EŞLEŞTİRME (GENEL ANALİZ İÇİN) - Son 2 Kelimeye Bakar
     function smartCategoryMatch(hMap, category) {
         if (hMap[category] !== undefined) return category;
         
@@ -507,7 +519,6 @@
         return null;
     }
 
-    // ORİJİNAL HESAP KURALI: Sayıysa Sum, Metinse/0/1 ise Count
     function customAgg(val, op) {
         if (op === 'count') {
             if (val == null || val === "" || val === "0" || val === 0) return 0;
@@ -530,7 +541,6 @@
         if(tabId === 'tab-data') loadSheetData(); 
     }
  
-    // --- DİNAMİK AYLARI OLUŞTURMA ---
     function setupMonthZones() {
         let count = parseInt(document.getElementById('monthCountInput').value) || 2;
         if (count > 12) count = 12;
@@ -596,7 +606,6 @@
  
     document.addEventListener("DOMContentLoaded", () => { setupMonthZones(); });
  
-    // --- DOSYA İŞLEME ---
     function handleFiles(files, mIndex) {
         if(files.length === 0) return;
         const validFiles = Array.from(files).filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls'));
@@ -646,8 +655,6 @@
                 }
             }
         }
- 
-        
         
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -659,31 +666,23 @@
             let detailSheet = targetApp.sheetNames[0];
             let summarySheet = targetApp.sheetNames[0];
             
-            // 1. İsimden Tahmin (Yedek Plan)
             targetApp.sheetNames.forEach(sn => {
                 let snL = getSafeStr(sn);
                 if (snL.includes('sayfa2') || snL.includes('detay')) detailSheet = sn;
                 if (snL.includes('sayfa1') || snL.includes('ozet')) summarySheet = sn;
             });
             
-            // 2. KESİN ÇÖZÜM: Sadece Sütun Başlıklarını (İlk Satırı) Tarama
             targetApp.sheetNames.forEach(sn => {
-                // {header: 1} ile okuyup [0] diyerek SADECE EN ÜSTTEKİ SÜTUN BAŞLIKLARINI alıyoruz
                 let headers = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header: 1})[0] || [];
-                
                 let isDetail = false;
                 let isSummary = false;
                 
                 headers.forEach(col => {
                     if(!col) return;
-                    // Sütun başlığını Türkçe ve büyük/küçük harf duyarsız hale getirip boşlukları siliyoruz
                     let cSafe = getSafeStr(col).replace(/\s+/g, '');
-                    
-                    // ESKİ versiyon için "hizmetadi", YENİ versiyon için "hastatur" veya "tetkikturu" sütunu var mı?
                     if (cSafe.includes("hizmetadi") || cSafe.includes("hastatur") || cSafe.includes("tetkikturu")) {
                         isDetail = true;
                     }
-                    // Yeni versiyon özet sayfası (Hasta sayıları) için sütun başlıkları kontrolü
                     if (cSafe.includes("bransvedoktor") || cSafe.includes("poliklinikbasvuran") || cSafe.includes("acilebasvuran")) {
                         isSummary = true;
                     }
@@ -693,7 +692,6 @@
                 if (isSummary) summarySheet = sn;
             });
 
-            // Eğer özet ve detay aynı sayfada kalmışsa ama dosyada birden fazla sayfa varsa, diğerini özet yap
             if (detailSheet === summarySheet && targetApp.sheetNames.length > 1) {
                 summarySheet = targetApp.sheetNames.find(s => s !== detailSheet) || summarySheet;
             }
@@ -727,14 +725,11 @@
     }
 
     function applyGlobalFilters() {
-        // 1. İşlem başladığında yükleme ekranını aç
         document.getElementById('loadingOverlay').style.display = 'flex';
         
-        // 2. Tarayıcıya loader'ı ekrana çizmesi için 50 milisaniye süre tanıyoruz
         setTimeout(() => {
             APP.globalBirimFilter = document.getElementById('globalBirimFilter').value;
             
-            // --- KURAL 1: SADECE ESKİ FORMATLAR İÇİN OTOMATİK DOSYA SEÇİCİ ---
             let targetStr = "";
             if (APP.globalBirimFilter === 'Poliklinik') targetStr = "2.1";
             else if (APP.globalBirimFilter === 'Acil') targetStr = "2.2";
@@ -743,9 +738,6 @@
             if (targetStr !== "") {
                 for(let i = 1; i <= APP.monthCount; i++) {
                     let p = APP.months[i];
-                    
-                    // KRİTİK GÜNCELLEME: İlgili ayın "Eski Format" olduğundan kesin emin oluyoruz.
-                    // Yeni versiyonlara ASLA dosya değiştirme işlemi uygulanmaz!
                     let formatVal = document.getElementById(`formatM${i}`) ? document.getElementById(`formatM${i}`).value : 'auto';
                     let isEskiFormat = p && (p.isOldFormat || formatVal === 'old');
                     
@@ -753,7 +745,6 @@
                         let matchIdx = p.files.findIndex(f => f.name.includes(targetStr));
                         let selEl = document.getElementById(`selFileM${i}`);
                         
-                        // Dosyayı bulduysak ve o an seçili olan o değilse değiştir:
                         if (matchIdx !== -1 && selEl && parseInt(selEl.value) !== matchIdx) {
                             selEl.value = matchIdx;
                             document.getElementById(`matchInfoM${i}`).innerHTML = `<span style="color:#2563eb; font-weight:bold;">🔄 Birim Tipi'ne göre otomatik seçildi: ${p.files[matchIdx].name}</span>`;
@@ -762,14 +753,10 @@
                     }
                 }
             }
-            // ------------------------------------------------------------------------
 
             for(let i=1; i<=APP.monthCount; i++) {
                 let p = APP.months[i];
                 if(p && p.data.length > 0) {
-                    
-                    // --- KURAL 2: SADECE YENİ FORMATLAR İÇİN VERİ FİLTRELEME ---
-                    // Eski formatın içindeki veriye KESİNLİKLE dokunmuyoruz.
                     if (!p.isOldFormat) {
                         let hastaCol = Object.keys(p.data[0]).find(k => {
                             let clean = String(k).toUpperCase().replace(/İ/g, 'I').replace(/Ü/g, 'U').replace(/\s+/g, '');
@@ -795,7 +782,7 @@
                                     return cv.includes('YATAN') || (cv.includes('KLIN') && !cv.includes('POLI'));
                                 });
                             } else {
-                                delete p.filters[hastaCol]; // Tümü seçildiyse filtreyi kaldır
+                                delete p.filters[hastaCol];
                             }
                         }
                     }
@@ -812,13 +799,10 @@
             let radContainer = document.getElementById('radResultsContainer');
             if(radContainer && radContainer.innerHTML.trim() !== "") radContainer.innerHTML = warnHtml;
 
-            // 3. İşlem bittiğinde yükleme ekranını kapat
             document.getElementById('loadingOverlay').style.display = 'none';
 
-        }, 50); // Timeout Sonu
+        }, 50); 
     }
-
-    
     
     function processUnpivotAndSetData(p, raw, mIndex) {
         if (!raw || raw.length === 0) {
@@ -858,7 +842,6 @@
                 else if (tt.includes('REZONANS') || tt.includes('MR')) newRow['Tetkik Türü_STD'] = 'MR';
                 else newRow['Tetkik Türü_STD'] = r['Tetkik Türü'];
 
-                // HASTA TÜRÜNÜ BUL VE GİZLİ ETİKETİ (BirimTipi) YAPIŞTIR
                 let hastaCol = Object.keys(r).find(k => getSafeStr(k).replace(/\s+/g, '').includes('hastatur'));
                 let hastaTuru = hastaCol ? getSafeStr(r[hastaCol]) : "";
                 
@@ -898,13 +881,9 @@
 
     function applyInternalFilters(p) { 
         let temp = p.data;
-        
-        // İLK YÜKLEME SORUNUNUN ÇÖZÜMÜ: Yeni formattaysa, menüdeki seçimi her halükarda anında uygula.
-        // Eski formattaysa (önceki aylar) dokunma!
         if (APP.globalBirimFilter !== 'Tümü' && !p.isOldFormat) {
             temp = temp.filter(r => r['_BirimTipi'] === APP.globalBirimFilter);
         }
-
         if(Object.keys(p.filters).length === 0) {
             p.filtered = [...temp];
         } else {
@@ -986,7 +965,6 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
  
     function populateDropdowns() {
-        // YENİ FORMAT DOSYASI VARSA YENİ FORMAT MENÜLERİNİ DOLDUR
         let pNew = Object.values(APP.months).find(m => m && !m.isOldFormat && m.data && m.data.length > 0);
         if(pNew) {
             const headers = Object.keys(pNew.data[0]).filter(h => !h.startsWith('_') && !h.endsWith('_STD'));
@@ -1033,7 +1011,6 @@
             }
         }
 
-        // ESKİ FORMAT DOSYASI VARSA ESKİ FORMAT MENÜLERİNİ DOLDUR
         let pOld = Object.values(APP.months).find(m => m && m.isOldFormat && m.data && m.data.length > 0);
         if (pOld) {
             let oldHeaders = Object.keys(pOld.data[0]).filter(h => !h.startsWith('_') && !h.endsWith('_STD'));
@@ -1080,7 +1057,6 @@
         }
     }
  
-    // YENİ: Arayüz (HTML) için yeşil/kırmızı oklu Yüzde hesaplayıcı
     function getPctArrow(val1, val2) {
         if (val2 === 0 && val1 === 0) return `<span class="arrow-neu" style="color:#64748b;">-%0</span>`;
         if (val2 === 0 && val1 > 0) return `<span class="arrow-up" style="color:green; font-weight:bold;">▲ +%100.0</span>`;
@@ -1090,7 +1066,6 @@
         return `<span class="arrow-neu" style="color:#64748b;">-%0.0</span>`;
     }
 
-    // YENİ: Excel ve PPT çıktıları için düz metin formatında Yüzde hesaplayıcı
     function getPctArrowText(val1, val2) {
         if (val2 === 0 && val1 === 0) return `-%0`;
         if (val2 === 0 && val1 > 0) return `▲ +%100.0`;
@@ -1154,7 +1129,6 @@
  
     function updateTetkikList() {
         let tCol = document.getElementById('mapTetkikTuru').value;
-        // Tüm filtreleme listelerinin ID'lerini buraya dahil ettik:
         let selectIds = ['genTetkikFilter', 'radTetkikFilter', 'statTetkikFilter', 'repTetkikFilter'];
         
         let p1 = APP.months[1];
@@ -1172,8 +1146,6 @@
             if(sel) {
                 sel.innerHTML = "";
                 vals.forEach(v => {
-                    // YENİ GÜNCELLEME: 'selected' özelliği sayesinde artık tüm analiz türlerinde 
-                    // (İstatistik ve Tekrarlı dahil) tüm tetkikler varsayılan olarak seçili gelecek.
                     sel.innerHTML += `<option value="${v}" selected>${v}</option>`;
                 });
             }
@@ -1184,7 +1156,6 @@
         if (!p || p.data.length === 0) return [];
         let groups = {};
         
-        // Hangi format gelirse gelsin, kendi kutucuğundan ayarı çeker
         let cCat = p.isOldFormat ? document.getElementById('oldAnlCat').value : document.getElementById('anlCat').value;
         if (!cCat) return []; 
         
@@ -1256,7 +1227,6 @@
         let p1 = APP.months[1];
         if(!p1 || p1.data.length === 0) { alert("Önce 1. Ay verisini yükleyin."); return; }
         
-        // DİNAMİK VALİDASYON: 1. Ay hangi formattaysa onun kutuları boş mu diye bakar
         if (p1.isOldFormat) {
             if(!document.getElementById('oldAnlCat').value) { alert("Lütfen Eski Format Kategori (Satır) seçin."); return; }
         } else {
@@ -1271,7 +1241,6 @@
         const container = document.getElementById('genResultsContainer');
         container.innerHTML = ""; 
 
-        // Eğer yeni formatsa seçili sütun sayısı kadar döner, eski formatsa içindeki tetkikler kadar 1 kez döner
         let loopCount = p1.isOldFormat ? 1 : document.getElementById('anlVal').selectedOptions.length;
 
         for(let vIdx = 0; vIdx < loopCount; vIdx++) {
@@ -1397,7 +1366,6 @@
             }
         });
 
-        // HATA DÜZELTMESİ: Sütun adını dinamik ve Regex kullanarak bulma
         let brDrCol = null;
         if (!p.isOldFormat && p.summaryData && p.summaryData.length > 0) {
             let sampleKeys = Object.keys(p.summaryData[0]);
@@ -1410,9 +1378,6 @@
             let sampleRow = p.summaryData[0];
             let keys = Object.keys(sampleRow);
             
-            // HARİKA TESPİT: 'klinik' kelimesi 'poliklinik' içinde geçtiği için hata oluyordu.
-            // ÇÖZÜM: İçinde 'poliklinik' ve 'hasta' geçenleri Poli yap, 
-            // 'klinik' ve 'hasta' geçip 'poli' GEÇMEYENLERİ Klinik yap!
             let kPoli = keys.find(k => {
                 let clean = getSafeStr(k).replace(/\s+/g, '');
                 return clean.includes('poliklinik') && clean.includes('hasta');
@@ -1507,17 +1472,15 @@
         let p1 = APP.months[1];
         if(!p1 || p1.data.length===0) { alert("Önce 1. Ay verisini yükleyin."); return; }
 
-        // DİNAMİK VALİDASYON: Sadece 1. Ayın formatına ait zorunlu alanlara bakar
         if (!p1.isOldFormat) {
             if(!cols.brans || !cols.dr || !cols.tetkikTuru) { alert("Lütfen Yeni Versiyon için Branş, Doktor ve Teftiş Türü sütunlarını seçiniz."); return; }
         } else {
             if(!oldCols.brans || !oldCols.dr) { alert("Lütfen Eski Versiyon için Branş ve Doktor sütunlarını seçiniz."); return; }
         }
 
-        // Otomatik Hepsini Alma
         let targetKeys = Array.from(document.getElementById('radTetkikFilter').selectedOptions).map(o => o.value);
         if (targetKeys.length === 0) { targetKeys = Array.from(document.getElementById('radTetkikFilter').options).map(o => o.value); }
-        if(targetKeys.length === 0) targetKeys = ['USG', 'MR', 'BT']; // Fallback
+        if(targetKeys.length === 0) targetKeys = ['USG', 'MR', 'BT']; 
 
         const scope = document.getElementById('radScope').value;
         const limit = parseInt(document.getElementById('radLimit').value) || 0;
@@ -1552,7 +1515,6 @@
                 if(compare) {
                     for(let m=2; m<=APP.monthCount; m++) {
                         if(hMaps[m]) {
-                            // Son İki Kelime Akıllı Doktor Eşleştirmesi
                             let hp = findDoctorMatch(hMaps[m], d.brans, d.doktor);
                             if(hp) {
                                 d.history[m] = { total: hp.total, pool: hp.branchPool };
@@ -1569,7 +1531,6 @@
             });
 
             const sorter = (a,b) => {
-                // Tabloyu o anki tetkikin (MR, BT, USG vb.) kendi sayısına göre büyükten küçüğe sıralar
                 let vA = a[tTypeOnly] || 0;
                 let vB = b[tTypeOnly] || 0;
                 return vB - vA;
@@ -1614,7 +1575,7 @@
         document.getElementById('resRadiology').style.display = 'block';
     }
  
-    // --- İSTATİSTİKSEL ANALİZ ---
+    // --- İSTATİSTİKSEL ANALİZ GÜNCELLEMESİ ---
     function runStatisticalAnalysis() {
         const cols = {
             brans: document.getElementById('mapBrans').value,
@@ -1636,26 +1597,45 @@
         }
         if(validMonths.length < 1) return alert("En az 1 aylık veri yüklemelisiniz.");
  
-        const focus = document.getElementById('statFocus').value;
+        const focusVal = document.getElementById('statFocus').value;
+        const groupType = document.getElementById('statGroup').value;
+        const zScore = parseFloat(document.getElementById('statConf').value);
         const selectedTetkikler = Array.from(document.getElementById('statTetkikFilter').selectedOptions).map(o => o.value);
+        let targetTetkik = selectedTetkikler.length > 0 ? selectedTetkikler[0] : 'USG';
  
         let masterMap = {};
         validMonths.forEach(mIndex => {
-            let mData = getRadiologyAggregates(APP.months[mIndex], cols, oldCols, selectedTetkikler.length > 0 ? selectedTetkikler[0] : 'USG'); 
+            let mData = getRadiologyAggregates(APP.months[mIndex], cols, oldCols, targetTetkik); 
             
             mData.forEach(d => {
-                let drLast2 = getLastTwoWords(d.doktor);
-                
-                // İstatistiksel Analiz İçin de Son İki Kelime Birleştirme
+                let key, labelBrans, labelDoktor;
+                if (groupType === 'branch') {
+                    key = d.brans; labelBrans = d.brans; labelDoktor = '-';
+                } else if (groupType === 'doctor') {
+                    key = getLastTwoWords(d.doktor); labelBrans = '-'; labelDoktor = d.doktor;
+                } else {
+                    key = d.brans + "||" + getLastTwoWords(d.doktor); labelBrans = d.brans; labelDoktor = d.doktor;
+                }
+
+                // Önceden var olan anahtarı bulma (Son iki kelime uyumu vb.)
                 let existingKey = Object.keys(masterMap).find(k => {
+                    if (groupType === 'branch') return k === key;
+                    
                     let kDrLast2 = getLastTwoWords(masterMap[k].doktor);
-                    return kDrLast2 === drLast2 && drLast2.length > 2; 
+                    let currDrLast2 = getLastTwoWords(labelDoktor);
+                    
+                    if (groupType === 'doctor') return kDrLast2 === currDrLast2 && currDrLast2.length > 2;
+                    return masterMap[k].brans === d.brans && kDrLast2 === currDrLast2 && currDrLast2.length > 2;
                 });
 
-                let k = existingKey ? existingKey : (d.brans + "||" + d.doktor);
+                let finalKey = existingKey ? existingKey : key;
                 
-                if(!masterMap[k]) masterMap[k] = { brans: d.brans, doktor: d.doktor, history: {} };
-                masterMap[k].history[mIndex] = d[focus] || 0;
+                if(!masterMap[finalKey]) masterMap[finalKey] = { brans: labelBrans, doktor: labelDoktor, history: {} };
+                
+                let valToAdd = focusVal === 'tetkik' ? (d[targetTetkik] || 0) : (d.total || 0);
+                
+                // Branş bazlı toplamlarda aynı branştaki doktorları toplayarak ilerle
+                masterMap[finalKey].history[mIndex] = (masterMap[finalKey].history[mIndex] || 0) + valToAdd;
             });
         });
  
@@ -1663,8 +1643,26 @@
         Object.keys(masterMap).forEach(k => {
             let obj = masterMap[k];
             let vals = validMonths.map(m => obj.history[m] || 0);
+            let n = vals.length;
             let sum = vals.reduce((a,b)=>a+b, 0);
-            obj.avg = sum > 0 ? (sum / validMonths.length).toFixed(1) : 0;
+            let mean = n > 0 ? sum / n : 0;
+            
+            // Standart Sapma Hesaplaması (Örneklem Varyansı: n-1)
+            let variance = n > 1 ? vals.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / (n - 1) : 0;
+            let sd = Math.sqrt(variance);
+            
+            // Güven Aralığı Hesaplaması (Z * (SD / √N))
+            let margin = n > 0 ? zScore * (sd / Math.sqrt(n)) : 0;
+
+            obj.avg = mean.toFixed(1);
+            obj.sd = sd.toFixed(2);
+            
+            let lower = (mean - margin).toFixed(1);
+            if (parseFloat(lower) < 0) lower = "0.0";
+            let upper = (mean + margin).toFixed(1);
+            
+            obj.ci = `${lower} - ${upper}`;
+            
             obj.max = Math.max(...vals);
             obj.min = Math.min(...vals);
             obj.totalSum = sum;
@@ -1675,7 +1673,7 @@
  
         let thHtml = `<tr><th>Branş</th><th>Doktor</th>`;
         validMonths.forEach(m => thHtml += `<th class="month-col">${m}. Ay Değer</th>`);
-        thHtml += `<th style="background:#f1f5f9;">Ortalama</th><th style="color:#ca8a04;">Max</th><th style="color:#94a3b8;">Min</th><th>Tüm Aylar Toplamı</th></tr>`;
+        thHtml += `<th style="background:#f1f5f9;">Ortalama</th><th style="background:#e0e7ff; color:#3730a3;">S.Sapma</th><th style="background:#ecfdf5; color:#065f46;">G.A. (Alt-Üst)</th><th style="color:#ca8a04;">Max</th><th style="color:#94a3b8;">Min</th><th>Toplam</th></tr>`;
  
         const tb = document.getElementById('tblStatistics');
         tb.querySelector('thead').innerHTML = thHtml;
@@ -1685,6 +1683,8 @@
             html += `<tr><td>${r.brans}</td><td>${r.doktor}</td>`;
             validMonths.forEach(m => html += `<td class="month-col">${r.history[m]||0}</td>`);
             html += `<td style="background:#f8fafc; font-weight:bold;">${r.avg}</td>
+                     <td style="background:#eef2ff; color:#3730a3;">±${r.sd}</td>
+                     <td style="background:#f0fdf4; color:#065f46; font-size:0.75rem;">${r.ci}</td>
                      <td style="color:#ca8a04;">${r.max}</td>
                      <td style="color:#94a3b8;">${r.min}</td>
                      <td style="font-weight:bold; color:var(--primary);">${r.totalSum}</td></tr>`;
@@ -1694,23 +1694,25 @@
         const ctx = document.getElementById('chart_stat').getContext('2d');
         if(APP.charts['stat']) APP.charts['stat'].destroy();
         
-        let lbls = resultData.slice(0, 30).map(d => d.doktor);
-        let avgData = resultData.slice(0, 30).map(d => d.avg);
+        let lbls = resultData.slice(0, 30).map(d => groupType === 'branch' ? d.brans : d.doktor);
+        let avgData = resultData.slice(0, 30).map(d => parseFloat(d.avg));
+        
+        let focusText = focusVal === 'tetkik' ? targetTetkik : 'Toplam Hasta';
         
         APP.charts['stat'] = new Chart(ctx, { 
             type: 'bar',
-            data: { labels: lbls, datasets: [{ label: 'Ortalama ('+focus.toUpperCase()+')', data: avgData, backgroundColor: '#10b981' }] }, 
+            data: { labels: lbls, datasets: [{ label: 'Ortalama ('+focusText+')', data: avgData, backgroundColor: '#10b981' }] }, 
             options: { responsive: true, maintainAspectRatio: false } 
         });
  
         document.getElementById('resStatistics').style.display = 'block';
  
         let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
-        let tetkikName = selectedTetkikler.length > 0 ? selectedTetkikler.join(', ') : 'Tümü';
-        APP.lastStatList = { data: resultData, validMonths, focus, title: `${scopeName}-İstatistik/${tetkikName} Analizi` };
+        let confPercent = zScore === 1.645 ? '%90' : (zScore === 1.96 ? '%95' : '%99');
+        let titleName = groupType === 'branch' ? 'Branş Bazlı' : (groupType === 'doctor' ? 'Hekim Bazlı' : 'Branş-Hekim');
+        APP.lastStatList = { data: resultData, validMonths, focus: focusVal, targetTetkik, title: `${scopeName}-${titleName} / ${targetTetkik} Analizi (${confPercent} GA)` };
     }
  
-    // --- RENDER DİNAMİK TABLOLAR ---
     function renderResultBlock(res, container, typePrefix) {
         const div = document.createElement('div');
         div.className = 'result-block';
@@ -1722,7 +1724,6 @@
             }
         }
 
-        // DÜZELTME: Fark sütunu başlığı % olarak değişti
         let thHtml = `<tr><th>Kategori</th><th>1. Ay Değer</th><th>% Pay</th>`;
         actMonths.forEach(m => { thHtml += `<th class="month-col">${m}. Ay Değer</th><th>% Pay</th><th>Fark(1-${m}) %</th>`; });
         thHtml += `</tr>`;
@@ -1743,7 +1744,6 @@
             let r = `<tr class="${cls}"><td>${d.category}</td><td>${d.value.toLocaleString()}</td><td>%${d.percent}</td>`;
             actMonths.forEach(m => {
                 let hm = d.history[m] || {val:0, pct:0, diff:0};
-                // DÜZELTME: Yeni Yüzdelik Ok hesaplayıcısı kullanılıyor
                 r += `<td class="month-col">${hm.val.toLocaleString()}</td><td>%${hm.pct}</td><td>${getPctArrow(d.value, hm.val)}</td>`;
             });
             html += r + "</tr>";
@@ -1752,7 +1752,6 @@
         let tRow = `<tr class="row-total"><td>GENEL TOPLAM</td><td>${res.total.toLocaleString()}</td><td>%100</td>`;
         actMonths.forEach(m => {
             let ht = res.hTotals[m] || 0;
-            // DÜZELTME: Yeni Yüzdelik Ok hesaplayıcısı kullanılıyor
             tRow += `<td class="month-col">${ht.toLocaleString()}</td><td>%100</td><td>${getPctArrow(res.total, ht)}</td>`;
         });
         
@@ -1787,7 +1786,6 @@
         thHtml += `<th>1. Ay Dr. ${tType} Sayısı</th><th>1. Ay %Dr</th><th>1. Ay %Br</th>`;
         
         actMonths.forEach(m => {
-            // DÜZELTME: Hastabaşı raporuna da % Fark sütunu başlığı eklendi
             thHtml += `<th class="month-col">${m}. Ay Dr. ${tType} Sayısı</th><th>Fark(1-${m}) %</th>`;
         });
         thHtml += `</tr>`;
@@ -1812,7 +1810,6 @@
                 let hm = d.history[m] || {};
                 let hVal = hm[tType] || 0;
                 let currentVal = d[tType] || 0;
-                // DÜZELTME: Hastabaşı raporuna Yüzdelik Ok değerleri basılıyor
                 r += `<td class="month-col">${hVal}</td><td>${getPctArrow(currentVal, hVal)}</td>`;
             });
             html += r + "</tr>";
@@ -1942,13 +1939,13 @@
             if(q.type==='stat') {
                 let h = ['Branş','Doktor'];
                 q.validMonths.forEach(m => h.push(`${m}. Ay Değer`));
-                h.push('Ortalama', 'Max', 'Min', 'Tüm Aylar Toplamı');
+                h.push('Ortalama', 'S.Sapma', 'G.A. (Alt-Üst)', 'Max', 'Min', 'Toplam');
                 ws_data.push(h);
 
                 q.data.forEach(d => {
                     let r = [d.brans, d.doktor];
                     q.validMonths.forEach(m => r.push(d.history[m]||0));
-                    r.push(d.avg, d.max, d.min, d.totalSum);
+                    r.push(d.avg, d.sd, d.ci, d.max, d.min, d.totalSum);
                     ws_data.push(r);
                 });
             }
@@ -1969,7 +1966,7 @@
                         let r = [d.category, d.value, d.percent];
                         actMonths.forEach(m => { 
                             r.push(d.history[m].val); r.push(d.history[m].pct); 
-                            r.push(getPctArrowText(d.value, d.history[m].val)); // EXCEL'E OKLU YÜZDE
+                            r.push(getPctArrowText(d.value, d.history[m].val)); 
                         });
                         ws_data.push(r);
                     });
@@ -1977,7 +1974,7 @@
                     let tr = ['GENEL TOPLAM', q.total, '100%'];
                     actMonths.forEach(m => { 
                         let ht = q.hTotals[m]||0; tr.push(ht); tr.push('100%'); 
-                        tr.push(getPctArrowText(q.total, ht)); // EXCEL'E OKLU YÜZDE
+                        tr.push(getPctArrowText(q.total, ht)); 
                     });
                     ws_data.push(tr);
 
@@ -1995,7 +1992,7 @@
                             let hm = d.history[m]||{}; 
                             let hVal = hm[tType]||0;
                             r.push(hVal); 
-                            r.push(getPctArrowText(d[tType], hVal)); // EXCEL'E OKLU YÜZDE
+                            r.push(getPctArrowText(d[tType], hVal)); 
                         });
                         ws_data.push(r);
                     });
@@ -2036,12 +2033,12 @@
                 if(item.type === 'stat') {
                     headers = ['Branş', 'Doktor'];
                     item.validMonths.forEach(m => headers.push(`${monthLabels[m]}\nDeğer`));
-                    headers.push('Ortalama', 'Max', 'Min');
+                    headers.push('Ortalama', 'S.Sapma', 'G.Aralığı');
                     
                     item.data.forEach(d => {
                         let r = [d.brans, d.doktor];
                         item.validMonths.forEach(m => r.push(d.history[m]||0));
-                        r.push(d.avg, d.max, d.min);
+                        r.push(d.avg, d.sd, d.ci);
                         rows.push(r);
                     });
                 }
@@ -2125,20 +2122,18 @@
                         let isTotalRow = (currentRow + idx === rows.length - 1) && totalRow.length > 0; 
                         let rowStyle = isTotalRow ? {fill:'cbd5e1', bold:true} : {}; 
                         
-                        // YENİ EKLENEN RENKLENDİRME MOTORU (PPT İÇİN)
                         let rowCells = r.map(c => {
                             let textStr = String(c);
                             let cellOptions = {...rowStyle, fontSize:fontS};
                             
-                            // Metnin içinde ok varsa rengini ve kalınlığını ayarla
                             if (textStr.includes('▲')) {
-                                cellOptions.color = '16a34a'; // Yeşil
+                                cellOptions.color = '16a34a'; 
                                 cellOptions.bold = true;
                             } else if (textStr.includes('▼')) {
-                                cellOptions.color = 'dc2626'; // Kırmızı
+                                cellOptions.color = 'dc2626'; 
                                 cellOptions.bold = true;
                             } else if (textStr === '-%0' || textStr === '-%0.0') {
-                                cellOptions.color = '64748b'; // Gri
+                                cellOptions.color = '64748b'; 
                             }
                             
                             return {text: textStr, options: cellOptions};

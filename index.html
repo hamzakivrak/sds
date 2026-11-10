@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Analiz Pro v22.9 (Son İki Kelime ile Akıllı Eşleştirme & Çoklu Döküm)</title>
+    <title>Master Analiz Pro v23.0 (Son İki Kelime ile Akıllı Eşleştirme & Çoklu Döküm)</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -23,6 +23,9 @@
         header { background: var(--dark); color: white; padding: 0 1.5rem; height: 60px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0; }
         header h1 { margin: 0; font-size: 1.3rem; font-weight: 500; }
         .badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.15); }
+
+        /* OFFLINE BANNER */
+        #offlineBanner { display: none; background: #dc2626; color: white; text-align: center; padding: 8px 15px; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.3px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); z-index: 3000; }
 
         /* MAIN LAYOUT */
         .main-container { display: flex; flex: 1; overflow: hidden; }
@@ -100,11 +103,16 @@
     </style>
 </head>
 <body>
- 
+
+<div id="offlineBanner">
+    ⚠️ İnternete bağlı değilsiniz! Uygulama önbellekten (cache) çalışıyor, GitHub üzerindeki son halini çekmemiş olabilir.
+</div>
+
 <header>
-    <h1><span>📊 Master Analiz Pro v22.9</span></h1>
-    <div>
+    <h1><span>📊 Master Analiz Pro v23.0</span></h1>
+    <div style="display:flex; align-items:center; gap:8px;">
         <span id="globalStatus" class="badge">Son 2 Kelime Eşleştirme Motoru Aktif</span>
+        <button class="btn btn-info btn-sm" onclick="updateFromGitHub()" title="hamzakivrak.github.io/sds/ adresinden son sürümü çek">🔄 Güncelle</button>
         <button class="btn btn-warning btn-sm" onclick="saveState()">💾 Ayarları Kaydet</button>
     </div>
 </header>
@@ -317,6 +325,7 @@
                        <select id="statFocus">
                            <option value="tetkik">Seçili Tetkik Sayısı</option>
                            <option value="total">Toplam Hasta Sayısı</option>
+                           <option value="ratio">Tetkik / Hasta Sayısı (%)</option>
                         </select>
                     </div>
                     <div>
@@ -430,6 +439,87 @@
 </div>
  
 <script>
+    // --- GITHUB GÜNCELLEME & ÇEVRİMDIŞI ÖNBELLEK (CACHE) YÖNETİMİ ---
+    const GITHUB_SDS_URL = "https://hamzakivrak.github.io/sds/";
+    const CACHE_STORAGE_KEY = "sds_cached_html_v23";
+
+    async function checkConnectionAndCache() {
+        const banner = document.getElementById('offlineBanner');
+        const statusBadge = document.getElementById('globalStatus');
+
+        // Mevcut çalışan HTML'i yerel önbelleğe yedekle
+        try {
+            localStorage.setItem(CACHE_STORAGE_KEY, document.documentElement.outerHTML);
+        } catch (e) { console.warn("Önbellek yazma hatası:", e); }
+
+        if (!navigator.onLine) {
+            if (banner) banner.style.display = 'block';
+            if (statusBadge) {
+                statusBadge.innerText = "⚠️ Çevrimdışı (Cache)";
+                statusBadge.style.background = "#dc2626";
+            }
+            alert("⚠️ İnternete bağlı değilsiniz!\n\nUygulama şu an önbellekten (cache) açıldı, GitHub üzerindeki son halini çekmemiş olabilir.");
+            return;
+        }
+
+        // İnternet var görünse bile GitHub'a erişimi doğrula
+        try {
+            const response = await fetch(GITHUB_SDS_URL, { method: 'HEAD', cache: 'no-store' });
+            if (response.ok) {
+                if (banner) banner.style.display = 'none';
+            }
+        } catch (err) {
+            if (banner) banner.style.display = 'block';
+            if (statusBadge) {
+                statusBadge.innerText = "⚠️ Çevrimdışı (Cache)";
+                statusBadge.style.background = "#dc2626";
+            }
+            alert("⚠️ GitHub sunucusuna ulaşılamadı!\n\nİnternete bağlı değilsiniz veya bağlantı kısıtlı. Uygulama önbellekten (cache) çalışıyor, son halini çekmemiş olabilir.");
+        }
+    }
+
+    async function updateFromGitHub() {
+        if (!navigator.onLine) {
+            alert("⚠️ İnternet bağlantınız yok! Güncelleme yapılabilmesi için internete bağlı olmalısınız.");
+            return;
+        }
+
+        const statusBadge = document.getElementById('globalStatus');
+        const oldText = statusBadge ? statusBadge.innerText : "";
+        if (statusBadge) statusBadge.innerText = "⏳ GitHub'dan çekiliyor...";
+
+        try {
+            const res = await fetch(GITHUB_SDS_URL + "?t=" + Date.now(), { cache: "no-store" });
+            if (!res.ok) throw new Error("Sunucu yanıt vermedi (HTTP " + res.status + ")");
+            const freshHtml = await res.text();
+
+            if (freshHtml && freshHtml.includes("<html")) {
+                try {
+                    localStorage.setItem(CACHE_STORAGE_KEY, freshHtml);
+                } catch (e) {}
+
+                alert("✅ GitHub'dan (hamzakivrak.github.io/sds/) en güncel sürüm başarıyla çekildi! Sayfa yenileniyor...");
+                document.open();
+                document.write(freshHtml);
+                document.close();
+            } else {
+                throw new Error("Geçersiz HTML içeriği alındı.");
+            }
+        } catch (err) {
+            if (statusBadge) statusBadge.innerText = oldText;
+            alert("❌ Güncelleme sırasında hata oluştu:\n" + err.message + "\n\nMevcut önbellek (cache) sürümüyle çalışmaya devam ediliyor.");
+        }
+    }
+
+    window.addEventListener('offline', () => {
+        const banner = document.getElementById('offlineBanner');
+        if (banner) banner.style.display = 'block';
+    });
+    window.addEventListener('online', () => {
+        const banner = document.getElementById('offlineBanner');
+        if (banner) banner.style.display = 'none';
+    });
+
     // --- APP STATE ---
     const APP = {
         monthCount: 2,
@@ -625,7 +715,10 @@
         }
     }
  
-    document.addEventListener("DOMContentLoaded", () => { setupMonthZones(); });
+    document.addEventListener("DOMContentLoaded", () => {
+        setupMonthZones();
+        checkConnectionAndCache();
+    });
  
     function handleFiles(files, mIndex) {
         if(files.length === 0) return;
@@ -1611,7 +1704,7 @@
         document.getElementById('resRadiology').style.display = 'block';
     }
  
-    // --- İSTATİSTİKSEL ANALİZ GÜNCELLEMESİ ---
+    // --- İSTATİSTİKSEL ANALİZ GÜNCELLEMESİ (Tetkik/Hasta % Desteği ile) ---
     function runStatisticalAnalysis(runAll = false) {
         const cols = {
             brans: document.getElementById('statMapBrans').value,
@@ -1673,16 +1766,39 @@
                     });
 
                     let finalKey = existingKey ? existingKey : key;
-                    if(!masterMap[finalKey]) masterMap[finalKey] = { brans: labelBrans, doktor: labelDoktor, history: {} };
+                    if(!masterMap[finalKey]) {
+                        masterMap[finalKey] = { brans: labelBrans, doktor: labelDoktor, history: {}, rawTetkik: {}, rawTotal: {} };
+                    }
                     
-                    let valToAdd = focusVal === 'tetkik' ? (d[targetTetkik] || 0) : (d.total || 0);
-                    masterMap[finalKey].history[mIndex] = (masterMap[finalKey].history[mIndex] || 0) + valToAdd;
+                    let tCount = d[targetTetkik] || 0;
+                    let pCount = d.total || 0;
+
+                    masterMap[finalKey].rawTetkik[mIndex] = (masterMap[finalKey].rawTetkik[mIndex] || 0) + tCount;
+                    masterMap[finalKey].rawTotal[mIndex] = (masterMap[finalKey].rawTotal[mIndex] || 0) + pCount;
                 });
             });
      
             let resultData = [];
             Object.keys(masterMap).forEach(k => {
                 let obj = masterMap[k];
+                let sumTetkikAll = 0;
+                let sumTotalAll = 0;
+
+                validMonths.forEach(m => {
+                    let tC = obj.rawTetkik[m] || 0;
+                    let pC = obj.rawTotal[m] || 0;
+                    sumTetkikAll += tC;
+                    sumTotalAll += pC;
+
+                    if (focusVal === 'tetkik') {
+                        obj.history[m] = tC;
+                    } else if (focusVal === 'total') {
+                        obj.history[m] = pC;
+                    } else if (focusVal === 'ratio') {
+                        obj.history[m] = pC > 0 ? parseFloat(((tC / pC) * 100).toFixed(1)) : 0;
+                    }
+                });
+
                 let vals = validMonths.map(m => obj.history[m] || 0);
                 let n = vals.length;
                 let sum = vals.reduce((a,b)=>a+b, 0);
@@ -1697,10 +1813,15 @@
                 let lower = (mean - margin).toFixed(1);
                 if (parseFloat(lower) < 0) lower = "0.0";
                 let upper = (mean + margin).toFixed(1);
-                obj.ci = `${lower} - ${upper}`;
-                obj.max = Math.max(...vals);
-                obj.min = Math.min(...vals);
-                obj.totalSum = sum;
+                obj.ci = focusVal === 'ratio' ? `%${lower} - %${upper}` : `${lower} - ${upper}`;
+                obj.max = focusVal === 'ratio' ? Math.max(...vals).toFixed(1) : Math.max(...vals);
+                obj.min = focusVal === 'ratio' ? Math.min(...vals).toFixed(1) : Math.min(...vals);
+                
+                if (focusVal === 'ratio') {
+                    obj.totalSum = sumTotalAll > 0 ? parseFloat(((sumTetkikAll / sumTotalAll) * 100).toFixed(1)) : 0;
+                } else {
+                    obj.totalSum = sum;
+                }
                 resultData.push(obj);
             });
      
@@ -1709,7 +1830,8 @@
             let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
             let confPercent = zScore === 1.645 ? '%90' : (zScore === 1.96 ? '%95' : '%99');
             let titleName = groupType === 'branch' ? 'Branş Bazlı' : (groupType === 'doctor' ? 'Hekim Bazlı' : 'Branş-Hekim');
-            let resTitle = `${scopeName}-${titleName} / ${targetTetkik} Analizi (${confPercent} GA)`;
+            let modeLabel = focusVal === 'ratio' ? `${targetTetkik}/Hasta (%)` : (focusVal === 'total' ? `Toplam Hasta` : `${targetTetkik}`);
+            let resTitle = `${scopeName}-${titleName} / ${modeLabel} Analizi (${confPercent} GA)`;
 
             let resObj = { data: resultData, validMonths, focus: focusVal, targetTetkik, title: resTitle, uniqueId: `stat_${idx}_${Date.now()}` };
             APP.lastStatList.push(resObj);
@@ -1723,10 +1845,11 @@
     function renderStatTableUI(res, container, groupType) {
         const div = document.createElement('div');
         div.className = 'result-block';
+        const isRatio = res.focus === 'ratio';
 
         let thHtml = `<tr><th>Branş</th><th>Doktor</th>`;
-        res.validMonths.forEach(m => thHtml += `<th class="month-col">${m}. Ay Değer</th>`);
-        thHtml += `<th style="background:#f1f5f9;">Ortalama</th><th style="background:#e0e7ff; color:#3730a3;">S.Sapma</th><th style="background:#ecfdf5; color:#065f46;">G.A. (Alt-Üst)</th><th style="color:#ca8a04;">Max</th><th style="color:#94a3b8;">Min</th><th>Toplam</th></tr>`;
+        res.validMonths.forEach(m => thHtml += `<th class="month-col">${m}. Ay ${isRatio ? '%' : 'Değer'}</th>`);
+        thHtml += `<th style="background:#f1f5f9;">Ortalama</th><th style="background:#e0e7ff; color:#3730a3;">S.Sapma</th><th style="background:#ecfdf5; color:#065f46;">G.A. (Alt-Üst)</th><th style="color:#ca8a04;">Max</th><th style="color:#94a3b8;">Min</th><th>${isRatio ? 'Genel %' : 'Toplam'}</th></tr>`;
 
         div.innerHTML = `
             <div class="result-header"><strong>${res.title}</strong></div>
@@ -1741,13 +1864,16 @@
         let html = "";
         res.data.forEach(r => {
             html += `<tr><td>${r.brans}</td><td>${r.doktor}</td>`;
-            res.validMonths.forEach(m => html += `<td class="month-col">${r.history[m]||0}</td>`);
-            html += `<td style="background:#f8fafc; font-weight:bold;">${r.avg}</td>
-                     <td style="background:#eef2ff; color:#3730a3;">±${r.sd}</td>
+            res.validMonths.forEach(m => {
+                let cellVal = r.history[m] !== undefined ? r.history[m] : 0;
+                html += `<td class="month-col">${isRatio ? '%' + cellVal : cellVal}</td>`;
+            });
+            html += `<td style="background:#f8fafc; font-weight:bold;">${isRatio ? '%' + r.avg : r.avg}</td>
+                     <td style="background:#eef2ff; color:#3730a3;">±${isRatio ? '%' + r.sd : r.sd}</td>
                      <td style="background:#f0fdf4; color:#065f46; font-size:0.75rem;">${r.ci}</td>
-                     <td style="color:#ca8a04;">${r.max}</td>
-                     <td style="color:#94a3b8;">${r.min}</td>
-                     <td style="font-weight:bold; color:var(--primary);">${r.totalSum}</td></tr>`;
+                     <td style="color:#ca8a04;">${isRatio ? '%' + r.max : r.max}</td>
+                     <td style="color:#94a3b8;">${isRatio ? '%' + r.min : r.min}</td>
+                     <td style="font-weight:bold; color:var(--primary);">${isRatio ? '%' + r.totalSum : r.totalSum}</td></tr>`;
         });
         tb.querySelector('tbody').innerHTML = html;
 
@@ -1755,7 +1881,7 @@
         let lbls = res.data.slice(0, 30).map(d => groupType === 'branch' ? d.brans : d.doktor);
         let avgData = res.data.slice(0, 30).map(d => parseFloat(d.avg));
         
-        let focusText = res.focus === 'tetkik' ? res.targetTetkik : 'Toplam Hasta';
+        let focusText = res.focus === 'tetkik' ? res.targetTetkik : (res.focus === 'ratio' ? `${res.targetTetkik}/Hasta %` : 'Toplam Hasta');
         
         new Chart(ctx, { 
             type: 'bar',
@@ -1991,15 +2117,26 @@ function toggleAllCharts(type) {
             let ws_data = [];
             
             if(q.type==='stat') {
+                const isRatio = q.focus === 'ratio';
                 let h = ['Branş','Doktor'];
-                q.validMonths.forEach(m => h.push(`${m}. Ay Değer`));
-                h.push('Ortalama', 'S.Sapma', 'G.A. (Alt-Üst)', 'Max', 'Min', 'Toplam');
+                q.validMonths.forEach(m => h.push(`${m}. Ay ${isRatio ? '%' : 'Değer'}`));
+                h.push('Ortalama', 'S.Sapma', 'G.A. (Alt-Üst)', 'Max', 'Min', isRatio ? 'Genel %' : 'Toplam');
                 ws_data.push(h);
 
                 q.data.forEach(d => {
                     let r = [d.brans, d.doktor];
-                    q.validMonths.forEach(m => r.push(d.history[m]||0));
-                    r.push(d.avg, d.sd, d.ci, d.max, d.min, d.totalSum);
+                    q.validMonths.forEach(m => {
+                        let v = d.history[m] !== undefined ? d.history[m] : 0;
+                        r.push(isRatio ? `%${v}` : v);
+                    });
+                    r.push(
+                        isRatio ? `%${d.avg}` : d.avg,
+                        isRatio ? `±%${d.sd}` : d.sd,
+                        d.ci,
+                        isRatio ? `%${d.max}` : d.max,
+                        isRatio ? `%${d.min}` : d.min,
+                        isRatio ? `%${d.totalSum}` : d.totalSum
+                    );
                     ws_data.push(r);
                 });
             }
@@ -2085,14 +2222,18 @@ function toggleAllCharts(type) {
                 let slideTitle = item.title;
 
                 if(item.type === 'stat') {
+                    const isRatio = item.focus === 'ratio';
                     headers = ['Branş', 'Doktor'];
-                    item.validMonths.forEach(m => headers.push(`${monthLabels[m]}\nDeğer`));
+                    item.validMonths.forEach(m => headers.push(`${monthLabels[m]}\n${isRatio ? '%' : 'Değer'}`));
                     headers.push('Ortalama', 'S.Sapma', 'G.Aralığı');
                     
                     item.data.forEach(d => {
                         let r = [d.brans, d.doktor];
-                        item.validMonths.forEach(m => r.push(d.history[m]||0));
-                        r.push(d.avg, d.sd, d.ci);
+                        item.validMonths.forEach(m => {
+                            let v = d.history[m] !== undefined ? d.history[m] : 0;
+                            r.push(isRatio ? `%${v}` : v);
+                        });
+                        r.push(isRatio ? `%${d.avg}` : d.avg, isRatio ? `±%${d.sd}` : d.sd, d.ci);
                         rows.push(r);
                     });
                 }

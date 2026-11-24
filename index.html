@@ -274,34 +274,44 @@
             </div>
 
             <div class="card">
-                <h3>Karar Ayarları <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(isteğe bağlı – varsayılanlar hazır, istediğiniz gibi değiştirin)</span>
-                    <button class="help-btn" onclick="toggleHelp('h-sdskarar')">❓ Bilgi</button></h3>
-                <div id="h-sdskarar" class="help-content">
-                    <b>Branş sorumluları:</b> Her branş için sorumlu kişiyi girin; KARAR tablosundaki "Sorumlu" alanı o branşın sorumlusuyla otomatik dolar.<br>
-                    <b>Kurallar:</b> Karar tablosundaki her hekim için kurallar <u>yukarıdan aşağıya</u> denenir, <u>koşulların hepsini sağlayan ilk kural</u> uygulanır; o kuralın <b>termin (gün)</b> ve <b>not şablonu</b> yazılır. Boş bırakılan koşul "aranmaz" demektir. En alttaki koşulsuz kural varsayılandır.<br>
-                    Not şablonunda şunları kullanabilirsiniz: <code>{hekim} {brans} {tetkik} {oran} {diger} {medyan} {fark} {medfark} {artis} {istem} {muayene}</code> (oran: 100 muayenede istem; diger: diğer hekimlerin oranı; fark: diğerlerinden fark %; medfark: medyandan fark %; artis: önceki döneme göre artış %).<br>
-                    Kutuya elle yazdığınız değerler kurallardan önceliklidir. Ayarlar bu tarayıcıda saklanır.
-                </div>
-                <details open style="margin-bottom:10px;"><summary style="cursor:pointer; font-weight:bold; color:#7c3aed;">👤 Branş Sorumluları</summary>
-                    <div id="sdsRespList" style="margin:10px 0;"></div>
-                    <label>Toplu giriş <small>(her satıra: Branş = Sorumlu)</small></label>
-                    <textarea id="sdsRespBulkTxt" style="width:100%; height:70px;" placeholder="Kardiyoloji = Uzm. Dr. Ayşe Yılmaz&#10;Ortopedi = Op. Dr. Ali Veli"></textarea>
-                    <button class="btn btn-sm btn-primary" onclick="sdsRespBulk()">Toplu Uygula</button>
-                </details>
-                <details open><summary style="cursor:pointer; font-weight:bold; color:#7c3aed;">📏 Termin ve Not Kuralları</summary>
-                    <div id="sdsRules" style="margin-top:10px;"></div>
-                    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px;">
-                        <button class="btn btn-sm btn-success" onclick="sdsRuleAdd()">➕ Kural Ekle</button>
-                        <button class="btn btn-sm btn-secondary" onclick="sdsRuleReset()">↺ Varsayılan Kurallara Dön</button>
+                <details>
+                    <summary style="cursor:pointer; font-size:1.05rem; font-weight:bold; color:#1e293b; list-style:none; display:flex; align-items:center; gap:8px;">
+                        <span>⚙️ Karar Ayarları (Branş Sorumluları &amp; Termin/Not Kuralları)</span>
+                        <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(açmak için tıklayın)</span>
+                        <span style="margin-left:auto; font-size:0.8rem; color:#7c3aed;">▾ Göster / Gizle</span>
+                    </summary>
+                    <div style="margin-top:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
+                        <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+                            <button class="help-btn" onclick="toggleHelp('h-sdskarar')">❓ Bilgi</button>
+                        </div>
+                        <div id="h-sdskarar" class="help-content">
+                            <b>Branş sorumluları:</b> Her branş için sorumlu kişiyi girin; KARAR tablosundaki "Sorumlu" alanı o branşın sorumlusuyla otomatik dolar.<br>
+                            <b>Kurallar:</b> Karar tablosundaki her hekim için kurallar <u>yukarıdan aşağıya</u> denenir, <u>koşulların hepsini sağlayan ilk kural</u> uygulanır; o kuralın <b>termin (gün)</b> ve <b>not şablonu</b> yazılır. Boş bırakılan koşul "aranmaz" demektir. En alttaki koşulsuz kural varsayılandır.<br>
+                            Not şablonunda şunları kullanabilirsiniz: <code>{hekim} {brans} {tetkik} {oran} {diger} {medyan} {fark} {medfark} {artis} {istem} {muayene}</code>.<br>
+                            Kutuya elle yazdığınız değerler kurallardan önceliklidir. Ayarlar bu tarayıcıda saklanır.
+                        </div>
+                        <details style="margin-bottom:10px;"><summary style="cursor:pointer; font-weight:bold; color:#7c3aed;">👤 Branş Sorumluları</summary>
+                            <div id="sdsRespList" style="margin:10px 0;"></div>
+                            <label>Toplu giriş <small>(her satıra: Branş = Sorumlu)</small></label>
+                            <textarea id="sdsRespBulkTxt" style="width:100%; height:70px;" placeholder="Kardiyoloji = Uzm. Dr. Ayşe Yılmaz&#10;Ortopedi = Op. Dr. Ali Veli"></textarea>
+                            <button class="btn btn-sm btn-primary" onclick="sdsRespBulk()">Toplu Uygula</button>
+                        </details>
+                        <details><summary style="cursor:pointer; font-weight:bold; color:#7c3aed;">📏 Termin ve Not Kuralları</summary>
+                            <div id="sdsRules" style="margin-top:10px;"></div>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px;">
+                                <button class="btn btn-sm btn-success" onclick="sdsRuleAdd()">➕ Kural Ekle</button>
+                                <button class="btn btn-sm btn-secondary" onclick="sdsRuleReset()">↺ Varsayılan Kurallara Dön</button>
+                            </div>
+                        </details>
+                        <div style="margin-top:12px; padding:10px 12px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
+                            <span style="font-size:0.82rem; color:#334155; font-weight:500;">💾 Branş sorumluları ve kurallar tarayıcınıza otomatik kaydedilir. İsterseniz bilgisayara yedekleyip geri yükleyebilirsiniz:</span>
+                            <button class="btn btn-sm btn-primary" onclick="sdsExportConfig()">⬇️ Bilgisayara Kaydet (.json)</button>
+                            <button class="btn btn-sm btn-outline" onclick="document.getElementById('sdsImportFile').click()">📂 Bilgisayardan Yükle (.json)</button>
+                            <input type="file" id="sdsImportFile" accept=".json" style="display:none" onchange="sdsImportConfig(this)">
+                            <span id="sdsAutoSaveBadge" style="font-size:0.78rem; color:#16a34a; font-weight:bold; margin-left:auto;"></span>
+                        </div>
                     </div>
                 </details>
-                <div style="margin-top:12px; padding:10px 12px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
-                    <span style="font-size:0.82rem; color:#334155; font-weight:500;">💾 Branş sorumluları ve kurallar tarayıcınıza otomatik kaydedilir. İsterseniz bilgisayara yedekleyip geri yükleyebilirsiniz:</span>
-                    <button class="btn btn-sm btn-primary" onclick="sdsExportConfig()">⬇️ Bilgisayara Kaydet (.json)</button>
-                    <button class="btn btn-sm btn-outline" onclick="document.getElementById('sdsImportFile').click()">📂 Bilgisayardan Yükle (.json)</button>
-                    <input type="file" id="sdsImportFile" accept=".json" style="display:none" onchange="sdsImportConfig(this)">
-                    <span id="sdsAutoSaveBadge" style="font-size:0.78rem; color:#16a34a; font-weight:bold; margin-left:auto;"></span>
-                </div>
             </div>
 
             <div id="sdsResults" class="card" style="display:none;">
@@ -1404,7 +1414,7 @@
             const headers = Object.keys(pNew.data[0]);
             const findCol = (regex) => headers.find(h => getSafeStr(h).replace(/\s+/g, '').match(regex));
             
-            let docCol = findCol(/islemdoktoru|hekimadi|doktoradi|hekim|doktor/i);
+            let docCol = headers.find(h => { let c = getSafeStr(h).replace(/\s+/g, ''); return /islemdoktoru\(yatisi|islemdoktoru|hekimadi|doktoradi|hekim|doktor/i.test(c) && !/^brans|yatirdigi|sayisi/i.test(c); });
             if(docCol && !document.getElementById('mapDoktor').value) document.getElementById('mapDoktor').value = docCol;
             
             let brCol = findCol(/islembrans|bransislem|brans|bolum/i);
@@ -1680,7 +1690,7 @@
             cDr = oldCols.dr;
         } else {
             cBr = headers.includes(cols.brans) ? cols.brans : (findCol(/islembrans|bransislem|brans|bolum/i));
-            cDr = headers.includes(cols.dr) ? cols.dr : (findCol(/islemdoktoru|hekimadi|doktoradi|hekim|doktor/i));
+            cDr = headers.includes(cols.dr) ? cols.dr : headers.find(h => { let c = getSafeStr(h).replace(/\s+/g, ''); return /islemdoktoru\(yatisi|islemdoktoru|hekimadi|doktoradi|hekim|doktor/i.test(c) && !/^brans|yatirdigi|sayisi/i.test(c); });
             cTet = headers.includes(cols.tetkikTuru) ? cols.tetkikTuru : 'Teftiş Türü';
             cAdet = headers.includes(cols.adet) ? cols.adet : 'Adet';
         }
@@ -1776,11 +1786,16 @@
                     valBr = poli + acil + klinik;
                 }
 
+                const brNorm = getSafeStr(originalBr).trim();
                 if (brDr.endsWith('TOPLAM')) {
                     branchPools[originalBr] = valBr;
+                    branchPools[brNorm] = valBr;
                 } else if (brDr.includes('-')) {
-                    let drName = cleanDrName(brDr.substring(brDr.indexOf('-')+1).trim());
+                    let sepIdx = brDr.lastIndexOf(' - ');
+                    let drRaw = sepIdx !== -1 ? brDr.substring(sepIdx + 3).trim() : brDr.substring(brDr.lastIndexOf('-') + 1).trim();
+                    let drName = cleanDrName(drRaw);
                     docTotals[originalBr+"||"+drName] = valDr;
+                    docTotals[brNorm+"||"+drName] = valDr;
                     docTotals[drName] = valDr; 
                 }
             });
@@ -1802,8 +1817,9 @@
         result.forEach(d => {
             let k = d.brans+"||"+d.doktor;
             if (isNewFormat) {
-                d.branchPool = branchPools[d.brans] || 0;
-                d.total = docTotals[k] !== undefined ? docTotals[k] : (docTotals[d.doktor] || 0);
+                const brNorm = getSafeStr(d.brans).trim();
+                d.branchPool = branchPools[d.brans] !== undefined ? branchPools[d.brans] : (branchPools[brNorm] || 0);
+                d.total = docTotals[k] !== undefined ? docTotals[k] : (docTotals[brNorm + "||" + d.doktor] !== undefined ? docTotals[brNorm + "||" + d.doktor] : (docTotals[d.doktor] || 0));
             } else {
                 d.branchPool = branchPools[d.brans] || 0;
                 d.total = d.tetkikTotal || 0; 
@@ -2717,14 +2733,19 @@ function sdsPopulate(force) {
     if (pNew) {
         const h = Object.keys(pNew.data[0]).filter(k => !k.startsWith('_') && !k.endsWith('_STD'));
         sdsFill('sdsBrans', h, sdsFind(h, /islembrans|bransislem|brans|bolum/));
-        sdsFill('sdsDoktor', h, sdsFind(h, /islemdoktoru|hekimadi|doktoradi|hekim|doktor/));
+        sdsFill('sdsDoktor', h, sdsFind(h, /islemdoktoru\(yatisi|islemdoktoru|hekimadi|doktoradi|hekim|doktor/, /^brans|yatirdigi|sayisi/));
         sdsFill('sdsTur', h, sdsFind(h, /tetkikturu|teftisturu/) || sdsFind(h, /islemadi|hizmetadi/));
         sdsFill('sdsAdet', h, sdsFind(h, /^adet$|^miktar$/));
         sdsFill('sdsHasta', h, sdsFind(h, /protokol|hastano|hastaid|tckimlik|tcno|^tc$|dosyano/, /tur/));
         const sh = (pNew.summaryData && pNew.summaryData.length) ? Object.keys(pNew.summaryData[0]) : [];
         sdsFill('sdsSumBrDr', sh, sdsFind(sh, /bransvedoktor/));
         sdsFill('sdsSumBrans', sh, sh.find(k => getSafeStr(k).trim() === 'brans'));
-        sdsFill('sdsSumMuayene', sh, null, true);
+        const defMuayene = [
+            sh.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('acil') && (c.includes('basvuran') || c.includes('hasta')); }),
+            sh.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('poliklinik') && (c.includes('basvuran') || c.includes('hasta')); }),
+            sh.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('klinik') && !c.includes('poli') && (c.includes('basvuran') || c.includes('hasta')); })
+        ].filter(Boolean);
+        sdsFill('sdsSumMuayene', sh, defMuayene.length ? defMuayene : null, true);
     }
     if (pOld) {
         const h = Object.keys(pOld.data[0]).filter(k => !k.startsWith('_') && !k.endsWith('_STD'));
@@ -2848,8 +2869,9 @@ function sdsCollectMonth(mIdx) {
                 sd.forEach(sr => {
                     const brDr = String(sr[cBD] || '').toUpperCase();
                     if (!brDr || brDr.endsWith('TOPLAM') || !brDr.includes('-')) return;
-                    const brName = String((cBr && sr[cBr]) || brDr.substring(0, brDr.indexOf('-'))).trim();
-                    const drName = brDr.substring(brDr.indexOf('-') + 1).trim();
+                    const sepIdx = brDr.lastIndexOf(' - ');
+                    const brName = String((cBr && sr[cBr]) || (sepIdx !== -1 ? brDr.substring(0, sepIdx) : brDr.substring(0, brDr.lastIndexOf('-')))).trim();
+                    const drName = (sepIdx !== -1 ? brDr.substring(sepIdx + 3) : brDr.substring(brDr.lastIndexOf('-') + 1)).trim();
                     let mu = 0; cols.forEach(c => { mu += parseFloat(sr[c]) || 0; });
                     const brKey = sdsBrKey(brName);
                     const drKey = sdsDrKey(drName);

@@ -244,16 +244,14 @@
                 <h3>2) Dönem Seçimi ve Ayarlar</h3>
                 <div style="display:flex; gap:20px; flex-wrap:wrap;">
                     <div style="flex:1; min-width:260px; background:#f0fdf4; padding:12px; border:1px solid #bbf7d0; border-radius:6px;">
-                        <label style="color:#166534; font-weight:bold;">Güncel dönem (işaretli aylar toplanır)</label>
-                        <div id="sdsCurMonths" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
-                        <label>Dönem adı</label>
-                        <input type="text" id="sdsCurName" list="sdsPeriodList" placeholder="Örn: Eylül–Kasım 2026">
+                        <label style="color:#166534; font-weight:bold;">Güncel dönem adı</label>
+                        <div id="sdsCurMonths" style="display:none;"></div>
+                        <input type="text" id="sdsCurName" list="sdsPeriodList" placeholder="Örn: Eylül–Kasım 2026" oninput="sdsSavePeriodNames()" onchange="sdsSavePeriodNames()" style="margin-bottom:0;">
                     </div>
                     <div style="flex:1; min-width:260px; background:#fff7ed; padding:12px; border:1px solid #fed7aa; border-radius:6px;">
-                        <label style="color:#9a3412; font-weight:bold;">Önceki dönem (isteğe bağlı kıyas)</label>
-                        <div id="sdsPrevMonths" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
-                        <label>Dönem adı</label>
-                        <input type="text" id="sdsPrevName" list="sdsPeriodList" placeholder="Örn: Haziran–Ağustos 2026">
+                        <label style="color:#9a3412; font-weight:bold;">Önceki dönem adı (isteğe bağlı kıyas)</label>
+                        <div id="sdsPrevMonths" style="display:none;"></div>
+                        <input type="text" id="sdsPrevName" list="sdsPeriodList" placeholder="Örn: Haziran–Ağustos 2026" oninput="sdsSavePeriodNames()" onchange="sdsSavePeriodNames()" style="margin-bottom:0;">
                     </div>
                     <datalist id="sdsPeriodList"><option value="Eylül–Kasım"><option value="Aralık–Şubat"><option value="Mart–Mayıs"><option value="Haziran–Ağustos"></datalist>
                 </div>
@@ -2737,23 +2735,39 @@ function sdsDefaultMonthLabel(i) {
     while (mName < 0) { mName += 12; yName--; }
     return `${i}. Ay (${monthNames[mName]} ${yName})`;
 }
+function sdsSavePeriodNames() {
+    try {
+        localStorage.setItem('sds_period_names_v1', JSON.stringify({
+            cur: sdsEl('sdsCurName') ? sdsEl('sdsCurName').value : '',
+            prev: sdsEl('sdsPrevName') ? sdsEl('sdsPrevName').value : ''
+        }));
+    } catch (e) { }
+}
+function sdsLoadPeriodNames() {
+    try {
+        const raw = localStorage.getItem('sds_period_names_v1');
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        if (d && typeof d.cur === 'string' && sdsEl('sdsCurName')) sdsEl('sdsCurName').value = d.cur;
+        if (d && typeof d.prev === 'string' && sdsEl('sdsPrevName')) sdsEl('sdsPrevName').value = d.prev;
+    } catch (e) { }
+}
 function sdsRenderPeriods() {
-    const build = (box, kind, defIdx) => {
-        const el = sdsEl(box); if (!el) return;
-        const keep = Array.from(el.querySelectorAll('input:checked')).map(i => parseInt(i.value));
-        const hadAny = el.children.length > 0;
-        let html = '';
-        for (let i = 1; i <= 12; i++) {
-            const p = APP.months[i]; const ok = p && p.data && p.data.length > 0;
-            const lbl = sdsDefaultMonthLabel(i);
-            const chk = hadAny ? keep.includes(i) : (ok && i === defIdx);
-            const badge = ok ? ' <span style="color:#16a34a;font-size:0.7rem;">●</span>' : ' <span style="color:#94a3b8;font-size:0.7rem;">(boş)</span>';
-            html += `<label style="display:inline-flex; align-items:center; gap:4px; margin:0; cursor:pointer; padding:2px 6px; border-radius:4px; background:${ok ? '#ffffff' : 'transparent'}; border:1px solid ${ok ? '#cbd5e1' : 'transparent'}; ${ok ? 'font-weight:500;' : 'opacity:.72;'}"><input type="checkbox" style="width:auto; margin:0;" value="${i}" ${chk ? 'checked' : ''}> ${lbl}${badge}</label>`;
+    const curEl = sdsEl('sdsCurMonths');
+    if (curEl) {
+        const ok1 = APP.months[1] && APP.months[1].data && APP.months[1].data.length > 0;
+        curEl.innerHTML = ok1 ? '<input type="checkbox" value="1" checked>' : '';
+    }
+    const prevEl = sdsEl('sdsPrevMonths');
+    if (prevEl) {
+        let h = '';
+        for (let i = 2; i <= 12; i++) {
+            if (APP.months[i] && APP.months[i].data && APP.months[i].data.length > 0) {
+                h += `<input type="checkbox" value="${i}" checked>`;
+            }
         }
-        el.innerHTML = html;
-    };
-    build('sdsCurMonths', 'cur', 1);
-    build('sdsPrevMonths', 'prev', 2);
+        prevEl.innerHTML = h;
+    }
 }
 function sdsChecked(id) { return Array.from(sdsEl(id).querySelectorAll('input:checked')).map(i => parseInt(i.value)); }
 function sdsSel(id) { const e = sdsEl(id); return e ? e.value : ''; }
@@ -2793,16 +2807,29 @@ function sdsCollectMonth(mIdx) {
             const cBD = sdsSel('sdsSumBrDr') || keys.find(k => getSafeStr(k).replace(/\s+/g, '').includes('bransvedoktor'));
             const cBr = sdsSel('sdsSumBrans') || keys.find(k => getSafeStr(k).trim() === 'brans');
             const manual = Array.from(sdsEl('sdsSumMuayene').selectedOptions).map(o => o.value);
-            let cols = manual;
-            if (!cols.length) {
-                const kPoli = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('poliklinik') && c.includes('hasta'); });
-                const kAcil = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('acil') && c.includes('hasta'); });
-                const kKlin = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return (c.includes('klinik') && c.includes('hasta') && !c.includes('poli')) || c.includes('doktorunyatirdigi') || c.includes('servisteyatan'); });
-                const f = APP.globalBirimFilter;
+            const kPoli = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('poliklinik') && (c.includes('hasta') || c.includes('basvuran') || c.includes('muayene')); });
+            const kAcil = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('acil') && (c.includes('hasta') || c.includes('basvuran') || c.includes('muayene')); });
+            const kKlin = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return (c.includes('klinik') && (c.includes('hasta') || c.includes('basvuran') || c.includes('yatan') || c.includes('muayene')) && !c.includes('poli')) || c.includes('doktorunyatirdigi') || c.includes('servisteyatan'); });
+            const f = APP.globalBirimFilter;
+            let cols = [];
+            if (manual.length) {
+                if (f === 'Poliklinik') {
+                    cols = manual.filter(k => getSafeStr(k).includes('poli'));
+                    if (!cols.length && kPoli) cols = [kPoli];
+                } else if (f === 'Acil') {
+                    cols = manual.filter(k => getSafeStr(k).includes('acil'));
+                    if (!cols.length && kAcil) cols = [kAcil];
+                } else if (f === 'Klinik') {
+                    cols = manual.filter(k => { const s = getSafeStr(k); return (s.includes('klin') && !s.includes('poli')) || s.includes('yatan'); });
+                    if (!cols.length && kKlin) cols = [kKlin];
+                } else {
+                    cols = manual;
+                }
+            } else {
                 if (f === 'Poliklinik') cols = [kPoli]; else if (f === 'Acil') cols = [kAcil]; else if (f === 'Klinik') cols = [kKlin];
                 else cols = [kPoli, kAcil, kKlin];
-                cols = cols.filter(Boolean);
             }
+            cols = cols.filter(Boolean);
             if (cBD) {
                 sd.forEach(sr => {
                     const brDr = String(sr[cBD] || '').toUpperCase();
@@ -2812,7 +2839,10 @@ function sdsCollectMonth(mIdx) {
                     let mu = 0; cols.forEach(c => { mu += parseFloat(sr[c]) || 0; });
                     const exact = sdsBrKey(brName) + '||' + sdsDrKey(drName);
                     let k = out[exact] ? exact : Object.keys(out).find(x => x.split('||')[1] === sdsDrKey(drName));
-                    if (!k) { get(brName, drName); k = exact; }
+                    if (!k) {
+                        if (mu <= 0) return;
+                        get(brName, drName); k = exact;
+                    }
                     out[k].mu += mu;
                 });
             }
@@ -3033,6 +3063,7 @@ function sdsRenderBrans() {
     let H = { mu: 0, n: { MR: 0, BT: 0, USG: 0, TOPLAM: 0 }, pts: 0, ptsOk: true, nd: 0 };
     Object.keys(gc).sort().forEach(k => {
         const g = gc[k]; const tot = {}; ['MR', 'BT', 'USG', 'TOPLAM'].forEach(t => tot[t] = sdsBranchTotals(g, t));
+        if (tot.TOPLAM.mu <= 0 && tot.TOPLAM.n <= 0) return;
         const meds = g.docs.filter(d => d.mu >= R.minMu).map(d => sdsPer100(sdsN(d, 'TOPLAM'), d.mu));
         const nd = g.docs.filter(d => d.mu > 0).length;
         const cells = [g.brans, nd, tot.TOPLAM.mu];
@@ -3070,6 +3101,7 @@ function sdsRenderBrans() {
             let sH = { mu: 0, n: 0, pts: 0, ptsOk: true, nd: 0 };
             Object.keys(gc).sort().forEach(k => {
                 const g = gc[k]; const tot = sdsBranchTotals(g, T);
+                if (tot.mu <= 0 && tot.n <= 0) return;
                 const meds = g.docs.filter(d => d.mu >= R.minMu).map(d => sdsPer100(sdsN(d, T), d.mu));
                 const nd = g.docs.filter(d => d.mu > 0).length;
                 const c = [g.brans, nd, tot.mu, tot.n, sdsRound(tot.per100), tot.pts === null ? null : sdsRound(sdsPer100(tot.pts, tot.mu)), sdsRound(sdsMedian(meds))];
@@ -3352,7 +3384,7 @@ function sdsAddQueue() {
     showToast(`${ids.length} tablo (ekrandaki sıralama ve satır sınırıyla) rapora eklendi. "Raporlama (Sunum & Çıktı)" sekmesinden Excel / Word / PPT indirebilirsiniz.`);
 }
 
-document.addEventListener('DOMContentLoaded', () => { try { loadSavedAppState(); sdsRenderRules(); sdsRenderResp(); sdsRenderPeriods(); sdsFlashSaved('💾 Yerel kurallar ve sorumlular yüklendi'); } catch (e) { console.warn(e); } });
+document.addEventListener('DOMContentLoaded', () => { try { loadSavedAppState(); sdsLoadPeriodNames(); sdsRenderRules(); sdsRenderResp(); sdsRenderPeriods(); sdsFlashSaved('💾 Yerel kurallar ve sorumlular yüklendi'); } catch (e) { console.warn(e); } });
 </script>
 <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column; backdrop-filter: blur(2px);">
     <div style="font-size:3rem; margin-bottom:15px; animation: spin 1s linear infinite;">⏳</div>

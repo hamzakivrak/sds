@@ -126,11 +126,16 @@
         <button class="tab-btn active" onclick="switchTab('tab-upload')">📁 Dosya Yönetimi</button>
         <button class="tab-btn" onclick="switchTab('tab-data')">🔍 Veri ve Filtreleme</button>
         <button class="tab-btn" onclick="switchTab('tab-sds')" style="color:#7c3aed; font-weight:bold;">🆕 Güncel SDS (Std. 2)</button>
-        <button class="tab-btn" onclick="switchTab('tab-analysis')">📈 Genel Analiz</button>
         <button class="tab-btn" onclick="switchTab('tab-radiology')">🏥 Hekim İstem Raporu (100 Muayene)</button>
-        <button class="tab-btn" onclick="switchTab('tab-statistics')">📉 İstatistiksel Analiz</button>
-        <button class="tab-btn" onclick="switchTab('tab-repeated')">🔄 Tekrarlı İşlemler</button>
-        <button class="tab-btn" onclick="switchTab('tab-export')">📑 Sunum & Çıktı</button>
+        <details open style="border-bottom:1px solid var(--border);">
+            <summary class="tab-btn" style="font-weight:600; color:var(--dark); list-style:none; cursor:pointer; user-select:none;">📂 Diğer <span style="margin-left:auto; font-size:0.75rem; color:#64748b;">▾</span></summary>
+            <div style="background:#f8fafc;">
+                <button class="tab-btn" style="padding-left:32px; font-size:0.9rem;" onclick="switchTab('tab-analysis')">📈 Genel Analiz</button>
+                <button class="tab-btn" style="padding-left:32px; font-size:0.9rem;" onclick="switchTab('tab-statistics')">📉 İstatistiksel Analiz</button>
+                <button class="tab-btn" style="padding-left:32px; font-size:0.9rem;" onclick="switchTab('tab-repeated')">🔄 Tekrarlı İşlemler</button>
+            </div>
+        </details>
+        <button class="tab-btn" onclick="switchTab('tab-export')">📑 Raporlama (Sunum &amp; Çıktı)</button>
     </aside>
  
     <main class="content">
@@ -252,6 +257,14 @@
                     </div>
                     <datalist id="sdsPeriodList"><option value="Eylül–Kasım"><option value="Aralık–Şubat"><option value="Mart–Mayıs"><option value="Haziran–Ağustos"></datalist>
                 </div>
+                <div style="margin-top:12px; background:#f5f3ff; padding:10px 12px; border-radius:6px; border:1px solid #ddd6fe; display:flex; flex-wrap:wrap; align-items:center; gap:14px;">
+                    <span style="font-weight:bold; color:#5b21b6; font-size:0.85rem;">🔬 Ayrı Alt Alta Tablolarda Gösterilecek Tetkik Türleri:</span>
+                    <label style="display:inline-flex; align-items:center; gap:5px; margin:0; cursor:pointer;"><input type="checkbox" class="sds-t-chk" value="MR" checked style="width:auto; margin:0;" onchange="sdsOnTypeChange()"> MR</label>
+                    <label style="display:inline-flex; align-items:center; gap:5px; margin:0; cursor:pointer;"><input type="checkbox" class="sds-t-chk" value="BT" checked style="width:auto; margin:0;" onchange="sdsOnTypeChange()"> BT</label>
+                    <label style="display:inline-flex; align-items:center; gap:5px; margin:0; cursor:pointer;"><input type="checkbox" class="sds-t-chk" value="USG" checked style="width:auto; margin:0;" onchange="sdsOnTypeChange()"> USG</label>
+                    <label style="display:inline-flex; align-items:center; gap:5px; margin:0; cursor:pointer;"><input type="checkbox" class="sds-t-chk" value="TOPLAM" checked style="width:auto; margin:0;" onchange="sdsOnTypeChange()"> Görüntüleme Toplam</label>
+                    <label style="display:inline-flex; align-items:center; gap:5px; margin:0; cursor:pointer; margin-left:auto; color:#6d28d9;"><input type="checkbox" id="sdsBransSeparate" checked style="width:auto; margin:0;" onchange="sdsOnTypeChange()"> Branş sekmesinde de ayrı tabloları alt alta göster</label>
+                </div>
                 <div class="grid-4" style="margin-top:12px;">
                     <div><label>Min. muayene sayısı <small>(altında "yetersiz örneklem")</small></label><input type="number" id="sdsMinMu" value="30" min="1"></div>
                     <div><label>İnceleme eşiği: diğer hekimlerden fark (%) <small>(kurum içi ayar)</small></label><input type="number" id="sdsEsik" value="50" min="0"></div>
@@ -279,9 +292,18 @@
                 </details>
                 <details open><summary style="cursor:pointer; font-weight:bold; color:#7c3aed;">📏 Termin ve Not Kuralları</summary>
                     <div id="sdsRules" style="margin-top:10px;"></div>
-                    <button class="btn btn-sm btn-success" onclick="sdsRuleAdd()">➕ Kural Ekle</button>
-                    <button class="btn btn-sm btn-secondary" onclick="sdsRuleReset()">↺ Varsayılan Kurallara Dön</button>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px;">
+                        <button class="btn btn-sm btn-success" onclick="sdsRuleAdd()">➕ Kural Ekle</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdsRuleReset()">↺ Varsayılan Kurallara Dön</button>
+                    </div>
                 </details>
+                <div style="margin-top:12px; padding:10px 12px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
+                    <span style="font-size:0.82rem; color:#334155; font-weight:500;">💾 Branş sorumluları ve kurallar tarayıcınıza otomatik kaydedilir. İsterseniz bilgisayara yedekleyip geri yükleyebilirsiniz:</span>
+                    <button class="btn btn-sm btn-primary" onclick="sdsExportConfig()">⬇️ Bilgisayara Kaydet (.json)</button>
+                    <button class="btn btn-sm btn-outline" onclick="document.getElementById('sdsImportFile').click()">📂 Bilgisayardan Yükle (.json)</button>
+                    <input type="file" id="sdsImportFile" accept=".json" style="display:none" onchange="sdsImportConfig(this)">
+                    <span id="sdsAutoSaveBadge" style="font-size:0.78rem; color:#16a34a; font-weight:bold; margin-left:auto;"></span>
+                </div>
             </div>
 
             <div id="sdsResults" class="card" style="display:none;">
@@ -381,8 +403,9 @@
                 <div class="toggle-switch"><input type="checkbox" id="chkCompareRad" checked><label for="chkCompareRad">Yüklenen Diğer Ayları da Kıyaslamaya Dahil Et</label></div>
  
                 <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border);">
-                    <label style="color:var(--primary); font-weight:bold;">🔍 Ayrı Ayrı Tablolanacak Tetkikler (Boş bırakırsanız tümünü tek tek döker)</label>
-                    <select id="radTetkikFilter" multiple style="height: 80px;" onchange="updateRadSort()"></select>
+                    <label style="color:var(--primary); font-weight:bold;">🔍 Ayrı Ayrı Alt Alta Tablolanacak Tetkikler (Seçiminize göre ayrı tablolar oluşur)</label>
+                    <div id="radTetkikCheckboxes" style="display:flex; flex-wrap:wrap; gap:12px; margin:6px 0 8px;"></div>
+                    <select id="radTetkikFilter" multiple style="height: 80px;" onchange="syncRadCheckboxesFromSelect(); updateRadSort();"></select>
                 </div>
                 
                 <div class="grid-4">
@@ -591,7 +614,7 @@
                 statusBadge.innerText = "⚠️ Çevrimdışı (Cache)";
                 statusBadge.style.background = "#dc2626";
             }
-            alert("⚠️ İnternete bağlı değilsiniz!\n\nUygulama şu an önbellekten (cache) açıldı, GitHub üzerindeki son halini çekmemiş olabilir.");
+            showToast("⚠️ İnternete bağlı değilsiniz!\n\nUygulama şu an önbellekten (cache) açıldı, GitHub üzerindeki son halini çekmemiş olabilir.");
             return;
         }
 
@@ -607,13 +630,13 @@
                 statusBadge.innerText = "⚠️ Çevrimdışı (Cache)";
                 statusBadge.style.background = "#dc2626";
             }
-            alert("⚠️ GitHub sunucusuna ulaşılamadı!\n\nİnternete bağlı değilsiniz veya bağlantı kısıtlı. Uygulama önbellekten (cache) çalışıyor, son halini çekmemiş olabilir.");
+            showToast("⚠️ GitHub sunucusuna ulaşılamadı!\n\nİnternete bağlı değilsiniz veya bağlantı kısıtlı. Uygulama önbellekten (cache) çalışıyor, son halini çekmemiş olabilir.");
         }
     }
 
     async function updateFromGitHub() {
         if (!navigator.onLine) {
-            alert("⚠️ İnternet bağlantınız yok! Güncelleme yapılabilmesi için internete bağlı olmalısınız.");
+            showToast("⚠️ İnternet bağlantınız yok! Güncelleme yapılabilmesi için internete bağlı olmalısınız.");
             return;
         }
 
@@ -631,7 +654,7 @@
                     localStorage.setItem(CACHE_STORAGE_KEY, freshHtml);
                 } catch (e) {}
 
-                alert("✅ GitHub'dan (hamzakivrak.github.io/sds/) en güncel sürüm başarıyla çekildi! Sayfa yenileniyor...");
+                showToast("✅ GitHub'dan (hamzakivrak.github.io/sds/) en güncel sürüm başarıyla çekildi! Sayfa yenileniyor...");
                 document.open();
                 document.write(freshHtml);
                 document.close();
@@ -640,7 +663,7 @@
             }
         } catch (err) {
             if (statusBadge) statusBadge.innerText = oldText;
-            alert("❌ Güncelleme sırasında hata oluştu:\n" + err.message + "\n\nMevcut önbellek (cache) sürümüyle çalışmaya devam ediliyor.");
+            showToast("❌ Güncelleme sırasında hata oluştu:\n" + err.message + "\n\nMevcut önbellek (cache) sürümüyle çalışmaya devam ediliyor.");
         }
     }
 
@@ -845,7 +868,7 @@
             let mName = curM - (i-1); let yName = curY;
             while(mName < 0) { mName += 12; yName--; }
             let defName = `${monthNames[mName]} ${yName}`;
-            lblContainer.innerHTML += `<div><label style="color:#0369a1;">${i}. Ay Etiketi:</label><input type="text" id="lblM${i}" value="${defName}" style="border-color:#7dd3fc;"></div>`;
+            lblContainer.innerHTML += `<div><label style="color:#0369a1;">${i}. Ay Etiketi:</label><input type="text" id="lblM${i}" value="${defName}" style="border-color:#7dd3fc;" onchange="if(typeof sdsRenderPeriods==='function') sdsRenderPeriods();"></div>`;
         }
     }
  
@@ -1015,13 +1038,13 @@
                 }
             }
 
-            for(let i=1; i<=APP.monthCount; i++) {
+            for(let i=1; i<=12; i++) {
                 let p = APP.months[i];
-                if(p && p.data.length > 0) {
+                if(p && p.data && p.data.length > 0) {
                     if (!p.isOldFormat) {
                         let hastaCol = Object.keys(p.data[0]).find(k => {
-                            let clean = String(k).toUpperCase().replace(/İ/g, 'I').replace(/Ü/g, 'U').replace(/\s+/g, '');
-                            return clean.includes('HASTATUR');
+                            let clean = getSafeStr(k).replace(/[\s_]+/g, '');
+                            return clean.includes('hastatur') || clean.includes('birimtipi') || clean.includes('gelisturu') || clean.includes('basvuruturu');
                         });
 
                         if (hastaCol) {
@@ -1029,18 +1052,18 @@
                             
                             if (APP.globalBirimFilter === 'Poliklinik') {
                                 p.filters[hastaCol] = allVals.filter(v => {
-                                    let cv = v.toUpperCase().replace(/İ/g, 'I');
-                                    return cv.includes('POLI');
+                                    let cv = getSafeStr(v);
+                                    return cv.includes('poli') || cv.includes('ayaktan') || cv.includes('2.1');
                                 });
                             } else if (APP.globalBirimFilter === 'Acil') {
                                 p.filters[hastaCol] = allVals.filter(v => {
-                                    let cv = v.toUpperCase().replace(/İ/g, 'I');
-                                    return cv.includes('ACIL');
+                                    let cv = getSafeStr(v);
+                                    return cv.includes('acil') || cv.includes('2.2');
                                 });
                             } else if (APP.globalBirimFilter === 'Klinik') {
                                 p.filters[hastaCol] = allVals.filter(v => {
-                                    let cv = v.toUpperCase().replace(/İ/g, 'I');
-                                    return cv.includes('YATAN') || (cv.includes('KLIN') && !cv.includes('POLI'));
+                                    let cv = getSafeStr(v);
+                                    return cv.includes('yatan') || (cv.includes('klin') && !cv.includes('poli')) || cv.includes('2.3');
                                 });
                             } else {
                                 delete p.filters[hastaCol];
@@ -1055,11 +1078,26 @@
             updateTetkikList();
             if (typeof sdsPopulate === 'function') { try { sdsPopulate(); } catch (e) { console.warn(e); } }
 
-            const warnHtml = '<div style="padding:15px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; text-align:center; font-weight:bold;">⚠️ Analiz Kapsamı (Birim Tipi) değiştirildi. Lütfen "Tümünü Analiz Et" butonlarına tekrar basınız.</div>';
-            let genContainer = document.getElementById('genResultsContainer');
-            if(genContainer && genContainer.innerHTML.trim() !== "") genContainer.innerHTML = warnHtml;
-            let radContainer = document.getElementById('radResultsContainer');
-            if(radContainer && radContainer.innerHTML.trim() !== "") radContainer.innerHTML = warnHtml;
+            // Aktif/açık olan tüm analiz sekmelerine seçimi otomatik sirayet ettir
+            try {
+                if (typeof SDS !== 'undefined' && SDS.res && typeof sdsRunCore === 'function') sdsRunCore();
+            } catch (e) { console.warn(e); }
+            try {
+                let resGen = document.getElementById('resGeneral');
+                if (resGen && resGen.style.display !== 'none') runGeneralAnalysis();
+            } catch (e) { console.warn(e); }
+            try {
+                let resRad = document.getElementById('resRadiology');
+                if (resRad && resRad.style.display !== 'none') runRadiologyAllInOne();
+            } catch (e) { console.warn(e); }
+            try {
+                let resStat = document.getElementById('resStatistics');
+                if (resStat && resStat.style.display !== 'none') runStatisticalAnalysis(false);
+            } catch (e) { console.warn(e); }
+            try {
+                let resRep = document.getElementById('resRepeated');
+                if (resRep && resRep.style.display !== 'none') runRepeated();
+            } catch (e) { console.warn(e); }
 
             document.getElementById('loadingOverlay').style.display = 'none';
 
@@ -1098,7 +1136,7 @@
         let finalData = [];
 
         if (isNewFormat) {
-            const hastaCol = keys.find(k => getSafeStr(k).replace(/\s+/g, '').includes('hastatur'));
+            const hastaCol = keys.find(k => getSafeStr(k).replace(/[\s_]+/g, '').includes('hastatur')) || keys.find(k => getSafeStr(k).replace(/[\s_]+/g, '').match(/birimtipi|gelisturu|basvuruturu/));
             filteredRaw.forEach(r => {
                 let newRow = { ...r };
                 let tt = String(r['Tetkik Türü'] || '').toUpperCase();
@@ -1109,9 +1147,16 @@
 
                 let hastaTuru = hastaCol ? getSafeStr(r[hastaCol]) : "";
                 
-                let birim = 'Poliklinik';
-                if (hastaTuru.includes('acil')) birim = 'Acil';
-                else if (hastaTuru.includes('yatan') || (hastaTuru.includes('klin') && !hastaTuru.includes('poli'))) birim = 'Klinik';
+                let birim = '';
+                if (!hastaCol) {
+                    birim = 'Poliklinik';
+                } else if (hastaTuru.includes('acil') || hastaTuru.includes('2.2')) {
+                    birim = 'Acil';
+                } else if (hastaTuru.includes('yatan') || (hastaTuru.includes('klin') && !hastaTuru.includes('poli')) || hastaTuru.includes('2.3')) {
+                    birim = 'Klinik';
+                } else if (hastaTuru.includes('poli') || hastaTuru.includes('ayaktan') || hastaTuru.includes('2.1')) {
+                    birim = 'Poliklinik';
+                }
                 
                 newRow['_BirimTipi'] = birim;
                 newRow['Adet_STD'] = 1; 
@@ -1427,12 +1472,40 @@
         selectIds.forEach(id => {
             let sel = document.getElementById(id);
             if(sel) {
+                let prevSelected = Array.from(sel.selectedOptions).map(o => o.value);
+                let hadOpts = sel.options.length > 0;
                 sel.innerHTML = "";
                 vals.forEach(v => {
-                    sel.innerHTML += `<option value="${v}" selected>${v}</option>`;
+                    let isSel = hadOpts ? prevSelected.includes(v) : true;
+                    sel.innerHTML += `<option value="${v}" ${isSel ? 'selected' : ''}>${v}</option>`;
                 });
             }
         });
+        renderRadTetkikCheckboxes();
+    }
+    function renderRadTetkikCheckboxes() {
+        const box = document.getElementById('radTetkikCheckboxes');
+        const sel = document.getElementById('radTetkikFilter');
+        if (!box || !sel) return;
+        const opts = Array.from(sel.options);
+        if (!opts.length) { box.innerHTML = '<small style="color:#64748b;">Veri yüklendiğinde tetkik türleri burada görünür.</small>'; return; }
+        box.innerHTML = opts.map(o => `<label style="display:inline-flex; align-items:center; gap:5px; margin:0; cursor:pointer; background:white; padding:4px 10px; border:1px solid #cbd5e1; border-radius:4px;"><input type="checkbox" style="width:auto; margin:0;" value="${o.value.replace(/"/g, '&quot;')}" ${o.selected ? 'checked' : ''} onchange="syncRadSelectFromCheckboxes()"> ${o.value}</label>`).join('');
+    }
+    function syncRadSelectFromCheckboxes() {
+        const box = document.getElementById('radTetkikCheckboxes');
+        const sel = document.getElementById('radTetkikFilter');
+        if (!box || !sel) return;
+        const checked = new Set(Array.from(box.querySelectorAll('input:checked')).map(i => i.value));
+        Array.from(sel.options).forEach(o => { o.selected = checked.has(o.value); });
+        if (document.getElementById('resRadiology').style.display !== 'none') runRadiologyAllInOne();
+    }
+    function syncRadCheckboxesFromSelect() {
+        const box = document.getElementById('radTetkikCheckboxes');
+        const sel = document.getElementById('radTetkikFilter');
+        if (!box || !sel) return;
+        const selected = new Set(Array.from(sel.selectedOptions).map(o => o.value));
+        box.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = selected.has(cb.value); });
+        if (document.getElementById('resRadiology').style.display !== 'none') runRadiologyAllInOne();
     }
  
     function getPivot(p, op, targetTetkik, valColIndex = 0) {
@@ -1505,12 +1578,12 @@
         const compare = document.getElementById('chkCompareGeneral').checked;
         
         let p1 = APP.months[1];
-        if(!p1 || p1.data.length === 0) { alert("Önce 1. Ay verisini yükleyin."); return; }
+        if(!p1 || p1.data.length === 0) { showToast("Önce 1. Ay verisini yükleyin."); return; }
         
         if (p1.isOldFormat) {
-            if(!document.getElementById('oldAnlCat').value) { alert("Lütfen Eski Format Kategori (Satır) seçin."); return; }
+            if(!document.getElementById('oldAnlCat').value) { showToast("Lütfen Eski Format Kategori (Satır) seçin."); return; }
         } else {
-            if(!document.getElementById('anlCat').value || document.getElementById('anlVal').selectedOptions.length === 0) { alert("Lütfen Yeni Format Kategori ve Hesap Sütunu seçin."); return; }
+            if(!document.getElementById('anlCat').value || document.getElementById('anlVal').selectedOptions.length === 0) { showToast("Lütfen Yeni Format Kategori ve Hesap Sütunu seçin."); return; }
         }
         
         let tetkikList = Array.from(document.getElementById('genTetkikFilter').selectedOptions).map(o => o.value);
@@ -1750,12 +1823,12 @@
         };
 
         let p1 = APP.months[1];
-        if(!p1 || p1.data.length===0) { alert("Önce 1. Ay verisini yükleyin."); return; }
+        if(!p1 || p1.data.length===0) { showToast("Önce 1. Ay verisini yükleyin."); return; }
 
         if (!p1.isOldFormat) {
-            if(!cols.brans || !cols.dr || !cols.tetkikTuru) { alert("Lütfen Yeni Versiyon için Branş, Hekim ve Tetkik Türü sütunlarını seçiniz."); return; }
+            if(!cols.brans || !cols.dr || !cols.tetkikTuru) { showToast("Lütfen Yeni Versiyon için Branş, Hekim ve Tetkik Türü sütunlarını seçiniz."); return; }
         } else {
-            if(!oldCols.brans || !oldCols.dr) { alert("Lütfen Eski Versiyon için Branş ve Doktor sütunlarını seçiniz."); return; }
+            if(!oldCols.brans || !oldCols.dr) { showToast("Lütfen Eski Versiyon için Branş ve Doktor sütunlarını seçiniz."); return; }
         }
 
         let targetKeys = Array.from(document.getElementById('radTetkikFilter').selectedOptions).map(o => o.value);
@@ -1843,7 +1916,7 @@
         for(let i=1; i<=APP.monthCount; i++) {
             if(APP.months[i] && APP.months[i].data.length > 0) validMonths.push(i);
         }
-        if(validMonths.length < 1) return alert("En az 1 aylık veri yüklemelisiniz.");
+        if(validMonths.length < 1) return showToast("En az 1 aylık veri yüklemelisiniz.");
  
         const focusVal = document.getElementById('statFocus').value;
         const groupType = document.getElementById('statGroup').value;
@@ -2145,6 +2218,7 @@
             <span>Satır sınırı:</span><input type="number" min="0" placeholder="Tümü" value="${ui.limit || ''}" style="width:70px;" onchange="radSet('${res.uniqueId}','limit',this.value)">
             <select onchange="radSet('${res.uniqueId}','group',this.value)"><option value="all" ${ui.groupMode === 'all' ? 'selected' : ''}>Tüm hastaneden ilk N</option><option value="branch" ${ui.groupMode === 'branch' ? 'selected' : ''}>Her branştan ilk N</option></select>
             <button class="btn btn-outline btn-sm" onclick="radSet('${res.uniqueId}','reset')">↺ Sıfırla</button>
+            <button class="btn btn-warning btn-sm" onclick="addRadSingleToExport('${res.uniqueId}')">➕ Bu Tabloyu Rapora Ekle</button>
             <span style="color:#64748b;">Gösterilen: <b>${res.data.length}</b> / ${res.all.length} satır (sıralama tüm satırlar üzerinden yapılır, sonra sınır uygulanır)</span></div>`;
         let body = '';
         res.data.forEach(d => { body += '<tr>' + cols.map((c, k) => `<td class="${k >= 2 && c.g !== radMonthLabel(1) ? 'mc' : ''}" ${k === 1 ? 'style="font-weight:600;"' : ''}>${c.html(d)}</td>`).join('') + '</tr>'; });
@@ -2184,10 +2258,10 @@
  
     function runRepeated() {
         let p1 = APP.months[1];
-        if(!p1 || p1.filtered.length === 0) { alert("1. Ay için veri yok."); return; }
+        if(!p1 || p1.filtered.length === 0) { showToast("1. Ay için veri yok."); return; }
  
         const chks = document.querySelectorAll('#repCols input:checked');
-        if(chks.length===0) { alert("Sütun seçiniz."); return; }
+        if(chks.length===0) { showToast("Sütun seçiniz."); return; }
         
         const cols = Array.from(chks).map(c=>c.value);
         const srvOptions = document.getElementById('repServiceCol').selectedOptions;
@@ -2244,7 +2318,7 @@ function toggleAllCharts(type) {
                 if(chartDiv && chartDiv.style.display !== 'none') reportItem.img = canvas.toDataURL();
                 queue.push(reportItem);
             });
-            alert(`${APP.lastGenList.length} analiz eklendi.`); renderQueue(); return;
+            showToast(`${APP.lastGenList.length} analiz eklendi.`); renderQueue(); return;
         }
         if(type==='radiology' && APP.lastRadList && APP.lastRadList.length > 0) {
             APP.lastRadList.forEach(item => {
@@ -2254,7 +2328,7 @@ function toggleAllCharts(type) {
                 if(chartDiv && chartDiv.style.display !== 'none') reportItem.img = canvas.toDataURL();
                 queue.push(reportItem);
             });
-            alert(`${APP.lastRadList.length} rapor eklendi.`); renderQueue(); return;
+            showToast(`${APP.lastRadList.length} rapor eklendi.`); renderQueue(); return;
         }
         if(type==='statistics' && APP.lastStatList && APP.lastStatList.length > 0) {
             APP.lastStatList.forEach(item => {
@@ -2264,9 +2338,20 @@ function toggleAllCharts(type) {
                 if(chartDiv && chartDiv.style.display !== 'none') reportItem.img = canvas.toDataURL();
                 queue.push(reportItem);
             });
-            alert(`${APP.lastStatList.length} istatistik raporu eklendi.`); renderQueue(); return;
+            showToast(`${APP.lastStatList.length} istatistik raporu eklendi.`); renderQueue(); return;
         }
-        if(type==='repeated' && APP.lastRep) { queue.push({type:'rep', ...APP.lastRep}); alert("Eklendi."); renderQueue(); }
+        if(type==='repeated' && APP.lastRep) { queue.push({type:'rep', ...APP.lastRep}); showToast("Eklendi."); renderQueue(); }
+    }
+    function addRadSingleToExport(uid) {
+        const item = (APP.lastRadList || []).find(r => r.uniqueId === uid);
+        if (!item) return;
+        let reportItem = { type: 'rad', ...item };
+        const chartDiv = document.getElementById(`chartContainer_rad_${item.uniqueId}`);
+        const canvas = document.getElementById(`chart_rad_${item.uniqueId}`);
+        if (chartDiv && chartDiv.style.display !== 'none' && canvas) reportItem.img = canvas.toDataURL();
+        queue.push(reportItem);
+        renderQueue();
+        showToast(`"${item.title}" rapora eklendi.`);
     }
     
     function renderQueue() {
@@ -2279,7 +2364,7 @@ function toggleAllCharts(type) {
     function removeFromQueue(idx) { queue.splice(idx, 1); renderQueue(); }
     
     function openPreview() {
-        if(queue.length===0) return alert("Boş");
+        if(queue.length===0) return showToast("Boş");
         const b = document.getElementById('previewBody'); b.innerHTML="";
         queue.forEach(q => { b.innerHTML += `<h4>${q.title}</h4>` + (q.img?`<img src="${q.img}" style="max-width:100%;height:200px">`:'') + `<hr>`; });
         document.getElementById('previewModal').style.display='block';
@@ -2336,8 +2421,8 @@ function toggleAllCharts(type) {
     }
 
     function downloadExcel(skipConfirm) {
-        if (queue.length === 0) return alert("Kuyruk boş");
-        if (skipConfirm !== true && !confirm("Excel indirmek istiyor musunuz?")) return;
+        if (queue.length === 0) return showToast("Kuyruk boş");
+        
         let wb = XLSX.utils.book_new();
         queue.forEach((q, i) => {
             let aoa = queueToAoa(q);
@@ -2351,8 +2436,8 @@ function toggleAllCharts(type) {
     }
 
     function downloadPPT() {
-        if(!confirm("PowerPoint indirmek istiyor musunuz?")) return;
-        if(queue.length===0) return alert("Kuyruk boş");
+        
+        if(queue.length===0) return showToast("Kuyruk boş");
         
         let monthLabels = {};
         for(let i=1; i<=APP.monthCount; i++) {
@@ -2458,6 +2543,15 @@ function toggleAllCharts(type) {
                             let textStr = String(c);
                             let cellOptions = {...rowStyle, fontSize:fontS};
                             
+                            let mArrow = textStr.match(/^(.*?)\s*(\(\s*[▲▼][^)]*\))$/);
+                            if (mArrow) {
+                                let isUp = textStr.includes('▲');
+                                let arrowColor = isUp ? '16a34a' : 'dc2626';
+                                let runs = [];
+                                if (mArrow[1]) runs.push({ text: mArrow[1] + ' ', options: {...rowStyle, fontSize:fontS, color: rowStyle.color || '1e293b'} });
+                                runs.push({ text: mArrow[2], options: {...rowStyle, fontSize:fontS, color: arrowColor, bold: true} });
+                                return { text: runs, options: cellOptions };
+                            }
                             if (textStr.includes('▲')) {
                                 cellOptions.color = '16a34a'; 
                                 cellOptions.bold = true;
@@ -2479,19 +2573,25 @@ function toggleAllCharts(type) {
                 }
             });
             pres.writeFile({ fileName: "SDS_Analiz_Sunum.pptx" }).then(() => { console.log("PPT İndirme Başladı"); });
-        } catch (e) { console.error(e); alert("Hata: " + e.message); }
+        } catch (e) { console.error(e); showToast("Hata: " + e.message); }
     }
  
     function downloadWord() {
-        if (queue.length === 0) return alert("Kuyruk boş");
-        if (!confirm("Word (.doc) dosyası indirmek istiyor musunuz?")) return;
+        if (queue.length === 0) return showToast("Kuyruk boş");
+        
         const esc = s => String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         let body = `<h1 style="font-family:Calibri;">SDS Analiz Raporu</h1><p style="font-family:Calibri; font-size:10pt;">Güncel SDS Uygulama Rehberi – Hastane (Sürüm 3) terminolojisine göre hazırlanmıştır. Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}</p>`;
         queue.forEach(q => {
             const aoa = queueToAoa(q);
             body += `<h3 style="font-family:Calibri;">${esc(q.title)}</h3><table border="1" cellspacing="0" cellpadding="3" style="border-collapse:collapse; font-family:Calibri; font-size:9pt;">`;
             aoa.forEach((r, i) => {
-                body += '<tr>' + r.map(c => i === 0 ? `<th style="background:#e2e8f0;">${esc(c)}</th>` : `<td>${esc(c)}</td>`).join('') + '</tr>';
+                body += '<tr>' + r.map(c => {
+                    if (i === 0) return `<th style="background:#e2e8f0;">${esc(c)}</th>`;
+                    let s = esc(c);
+                    s = s.replace(/(\(?▲[^)<]*\)?)/g, '<span style="color:#16a34a;font-weight:bold;">$1</span>');
+                    s = s.replace(/(\(?▼[^)<]*\)?)/g, '<span style="color:#dc2626;font-weight:bold;">$1</span>');
+                    return `<td>${s}</td>`;
+                }).join('') + '</tr>';
             });
             body += '</table>';
             if (q.notes) body += `<p style="font-family:Calibri; font-size:8pt; color:#555;">${q.notes.map(esc).join('<br>')}</p>`;
@@ -2503,7 +2603,54 @@ function toggleAllCharts(type) {
         document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
     }
     
-    function saveState(){ alert("Ayarlar Kaydedildi"); }
+    function saveState() {
+        try {
+            const labels = {};
+            for (let i = 1; i <= 12; i++) {
+                const el = document.getElementById('lblM' + i);
+                if (el) labels[i] = el.value;
+            }
+            const cfg = {
+                globalBirimFilter: document.getElementById('globalBirimFilter') ? document.getElementById('globalBirimFilter').value : 'Tümü',
+                sdsMinMu: document.getElementById('sdsMinMu') ? document.getElementById('sdsMinMu').value : '30',
+                sdsEsik: document.getElementById('sdsEsik') ? document.getElementById('sdsEsik').value : '50',
+                sdsGlobalLimit: document.getElementById('sdsGlobalLimit') ? document.getElementById('sdsGlobalLimit').value : '',
+                sdsBransSeparate: document.getElementById('sdsBransSeparate') ? document.getElementById('sdsBransSeparate').checked : true,
+                sdsTypes: Array.from(document.querySelectorAll('.sds-t-chk:checked')).map(c => c.value),
+                labels
+            };
+            localStorage.setItem('sds_app_settings_v1', JSON.stringify(cfg));
+            if (typeof sdsRespSave === 'function') sdsRespSave();
+            if (typeof sdsRulesSave === 'function') sdsRulesSave();
+            showToast("Tüm ayarlar, branş sorumluları ve kurallar tarayıcıya kaydedildi.");
+        } catch (e) {
+            showToast("Ayarlar kaydedilirken hata oluştu: " + e.message);
+        }
+    }
+    function loadSavedAppState() {
+        try {
+            const raw = localStorage.getItem('sds_app_settings_v1');
+            if (!raw) return;
+            const cfg = JSON.parse(raw);
+            if (cfg.globalBirimFilter && document.getElementById('globalBirimFilter')) {
+                document.getElementById('globalBirimFilter').value = cfg.globalBirimFilter;
+                APP.globalBirimFilter = cfg.globalBirimFilter;
+            }
+            if (cfg.sdsMinMu !== undefined && document.getElementById('sdsMinMu')) document.getElementById('sdsMinMu').value = cfg.sdsMinMu;
+            if (cfg.sdsEsik !== undefined && document.getElementById('sdsEsik')) document.getElementById('sdsEsik').value = cfg.sdsEsik;
+            if (cfg.sdsGlobalLimit !== undefined && document.getElementById('sdsGlobalLimit')) document.getElementById('sdsGlobalLimit').value = cfg.sdsGlobalLimit;
+            if (cfg.sdsBransSeparate !== undefined && document.getElementById('sdsBransSeparate')) document.getElementById('sdsBransSeparate').checked = !!cfg.sdsBransSeparate;
+            if (Array.isArray(cfg.sdsTypes) && cfg.sdsTypes.length) {
+                document.querySelectorAll('.sds-t-chk').forEach(c => { c.checked = cfg.sdsTypes.includes(c.value); });
+            }
+            if (cfg.labels) {
+                Object.keys(cfg.labels).forEach(k => {
+                    const el = document.getElementById('lblM' + k);
+                    if (el) el.value = cfg.labels[k];
+                });
+            }
+        } catch (e) { console.warn(e); }
+    }
 </script>
 
 <script>
@@ -2580,17 +2727,28 @@ function sdsPopulate(force) {
     }
     sdsRenderPeriods();
 }
+function sdsDefaultMonthLabel(i) {
+    const el = sdsEl('lblM' + i);
+    if (el && el.value) return el.value;
+    const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const today = new Date();
+    let mName = today.getMonth() - 1 - (i - 1);
+    let yName = today.getFullYear();
+    while (mName < 0) { mName += 12; yName--; }
+    return `${i}. Ay (${monthNames[mName]} ${yName})`;
+}
 function sdsRenderPeriods() {
     const build = (box, kind, defIdx) => {
         const el = sdsEl(box); if (!el) return;
         const keep = Array.from(el.querySelectorAll('input:checked')).map(i => parseInt(i.value));
         const hadAny = el.children.length > 0;
         let html = '';
-        for (let i = 1; i <= APP.monthCount; i++) {
+        for (let i = 1; i <= 12; i++) {
             const p = APP.months[i]; const ok = p && p.data && p.data.length > 0;
-            const lbl = sdsEl('lblM' + i) ? sdsEl('lblM' + i).value : i + '. Ay';
+            const lbl = sdsDefaultMonthLabel(i);
             const chk = hadAny ? keep.includes(i) : (ok && i === defIdx);
-            html += `<label style="display:inline-flex; align-items:center; gap:4px; margin:0; ${ok ? '' : 'opacity:.4;'}"><input type="checkbox" style="width:auto; margin:0;" value="${i}" ${ok ? '' : 'disabled'} ${chk && ok ? 'checked' : ''}> ${lbl}</label>`;
+            const badge = ok ? ' <span style="color:#16a34a;font-size:0.7rem;">●</span>' : ' <span style="color:#94a3b8;font-size:0.7rem;">(boş)</span>';
+            html += `<label style="display:inline-flex; align-items:center; gap:4px; margin:0; cursor:pointer; padding:2px 6px; border-radius:4px; background:${ok ? '#ffffff' : 'transparent'}; border:1px solid ${ok ? '#cbd5e1' : 'transparent'}; ${ok ? 'font-weight:500;' : 'opacity:.72;'}"><input type="checkbox" style="width:auto; margin:0;" value="${i}" ${chk ? 'checked' : ''}> ${lbl}${badge}</label>`;
         }
         el.innerHTML = html;
     };
@@ -2711,29 +2869,44 @@ function sdsBranchTotals(g, T) {
 }
 
 /* ---------- Çalıştır ---------- */
-function sdsRun() {
+function sdsSelectedTypes() {
+    const chks = Array.from(document.querySelectorAll('.sds-t-chk:checked')).map(c => c.value);
+    return chks.length ? chks : ['TOPLAM'];
+}
+function sdsOnTypeChange() {
+    if (!SDS.res) return;
+    sdsRenderBrans(); sdsRenderHekim(); sdsRenderKarar();
+}
+function sdsRunCore() {
     const cur = sdsChecked('sdsCurMonths'), prev = sdsChecked('sdsPrevMonths');
-    if (!cur.length) { alert('Güncel dönem için en az bir ay işaretleyin (ay verisi yüklü olmalı).'); return; }
-    if (!Object.values(APP.months).some(m => m && m.data && m.data.length)) { alert('Önce veri yükleyin.'); return; }
+    if (!cur.length) return false;
+    const minMu = parseInt(sdsEl('sdsMinMu').value) || 30;
+    const esik = parseFloat(sdsEl('sdsEsik').value); const esikV = isFinite(esik) ? esik : 50;
+    const curDocs = sdsAggregate(cur);
+    const prevDocs = prev.length ? sdsAggregate(prev) : null;
+    SDS.res = {
+        curName: sdsPeriodName(cur, 'sdsCurName'), prevName: prev.length ? sdsPeriodName(prev, 'sdsPrevName') : null,
+        scope: APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Tüm Birimler',
+        minMu, esik: esikV, cur: curDocs, prev: prevDocs, hasPrev: !!prevDocs, flagged: []
+    };
+    if (!Object.keys(curDocs).length) return false;
+    sdsRenderBrans(); sdsRenderHekim(); sdsRenderKarar();
+    sdsEl('sdsResults').style.display = 'block';
+    return true;
+}
+function sdsRun() {
+    const cur = sdsChecked('sdsCurMonths');
+    if (!cur.length) { showToast('Güncel dönem için en az bir ay işaretleyin (ay verisi yüklü olmalı).'); return; }
+    if (!Object.values(APP.months).some(m => m && m.data && m.data.length)) { showToast('Önce veri yükleyin.'); return; }
     const ov = sdsEl('loadingOverlay'); const tx = sdsEl('loadingText');
     if (tx) tx.innerText = 'Güncel SDS analizi hesaplanıyor...';
     ov.style.display = 'flex';
     setTimeout(() => {
         try {
-            const minMu = parseInt(sdsEl('sdsMinMu').value) || 30;
-            const esik = parseFloat(sdsEl('sdsEsik').value); const esikV = isFinite(esik) ? esik : 50;
-            const curDocs = sdsAggregate(cur);
-            const prevDocs = prev.length ? sdsAggregate(prev) : null;
-            SDS.res = {
-                curName: sdsPeriodName(cur, 'sdsCurName'), prevName: prev.length ? sdsPeriodName(prev, 'sdsPrevName') : null,
-                scope: APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Tüm Birimler',
-                minMu, esik: esikV, cur: curDocs, prev: prevDocs, hasPrev: !!prevDocs, flagged: []
-            };
-            if (!Object.keys(curDocs).length) { alert('Seçilen aylarda sütun eşleştirmesine uygun veri bulunamadı. Sütun eşleştirmesini kontrol edin.'); return; }
-            sdsRenderBrans(); sdsRenderHekim(); sdsRenderKarar();
-            sdsEl('sdsResults').style.display = 'block';
+            const ok = sdsRunCore();
+            if (!ok) { showToast('Seçilen aylarda sütun eşleştirmesine uygun veri bulunamadı. Sütun eşleştirmesini kontrol edin.'); return; }
             sdsSub('brans');
-        } catch (e) { console.error(e); alert('Hata: ' + e.message); }
+        } catch (e) { console.error(e); showToast('Hata: ' + e.message); }
         finally { ov.style.display = 'none'; if (tx) tx.innerText = 'Filtre değişimi uygulanıyor, lütfen bekleyiniz...'; }
     }, 40);
 }
@@ -2847,7 +3020,7 @@ function sdsTableItem(id) {
         notes.unshift(`Tabloda ${disp.length} / ${t.rows.length} satır gösterilmektedir; sıralama ve sınırlama tüm satırlar üzerinden yapılmıştır${t.sort.col !== null ? ' (sıralama sütunu: ' + t.headers[t.sort.col] + (t.sort.dir === -1 ? ', azalan' : ', artan') + ')' : ''}.`);
     return { type: 'tbl', title: t.title, headers: t.headers, rows, pinned: t.pinned.length, notes };
 }
-function sdsAddTable(id) { queue.push(sdsTableItem(id)); renderQueue(); alert('Tablo rapora eklendi. "Sunum & Çıktı" sekmesinden indirebilirsiniz.'); }
+function sdsAddTable(id) { queue.push(sdsTableItem(id)); renderQueue(); showToast('Tablo rapora eklendi. "Sunum & Çıktı" sekmesinden indirebilirsiniz.'); }
 
 /* ---------- BRANŞ ---------- */
 function sdsRenderBrans() {
@@ -2884,9 +3057,44 @@ function sdsRenderBrans() {
     const notes = ['* Branş içindeki hekimlerin (min. muayene şartını sağlayanların) 100 muayenede istem medyanıdır; bilgi amaçlıdır, hedef değildir.',
         'Branş ve hastane toplamları toplam sayılardan hesaplanmıştır (hekim oranlarının ortalaması alınmamıştır). Branşlar arası karşılaştırma betimseldir. Hastane toplamı satır sınırından etkilenmez.',
         '100 muayenede istem = istem sayısı ÷ muayene sayısı × 100 (yüzde değildir). ' + SDS_NOTE];
-    sdsRegTable('brans', { title: `Standart 2 Görüntüleme – Branş Bazlı 100 Muayenede İstem (${R.scope}; ${R.curName})`, headers, rows, pinned: [hc], notes, ints: [1, 2, 3, 5, 7, 9] });
-    sdsEl('sdsPane_brans').innerHTML = `<h4 style="margin:0 0 6px;">${SDS.tables.brans.title}</h4><div id="sdsT_brans"></div>`;
+    sdsRegTable('brans', { title: `Standart 2 Görüntüleme – Branş Bazlı Özet (${R.scope}; ${R.curName})`, headers, rows, pinned: [hc], notes, ints: [1, 2, 3, 5, 7, 9] });
+    let paneHtml = `<h4 style="margin:0 0 6px;">${SDS.tables.brans.title}</h4><div id="sdsT_brans"></div>`;
+    const showSep = sdsEl('sdsBransSeparate') && sdsEl('sdsBransSeparate').checked;
+    const selTypes = sdsSelectedTypes();
+    if (showSep) {
+        selTypes.forEach(T => {
+            const label = T === 'TOPLAM' ? 'Görüntüleme Toplam' : T;
+            const th = ['Branş', 'Hekim Sayısı', 'Muayene Sayısı', `${label} İstem Sayısı`, `100 Muayenede ${label} İstem`, 'İstenen Hasta Oranı (%)', 'Hekimler Arası Medyan (100 Muay.) *'];
+            if (R.hasPrev) th.push(`Önceki Dönem ${label} (/100)`, 'Değişim (/100)');
+            const trRows = [];
+            let sH = { mu: 0, n: 0, pts: 0, ptsOk: true, nd: 0 };
+            Object.keys(gc).sort().forEach(k => {
+                const g = gc[k]; const tot = sdsBranchTotals(g, T);
+                const meds = g.docs.filter(d => d.mu >= R.minMu).map(d => sdsPer100(sdsN(d, T), d.mu));
+                const nd = g.docs.filter(d => d.mu > 0).length;
+                const c = [g.brans, nd, tot.mu, tot.n, sdsRound(tot.per100), tot.pts === null ? null : sdsRound(sdsPer100(tot.pts, tot.mu)), sdsRound(sdsMedian(meds))];
+                if (R.hasPrev) {
+                    const pg = gp[k]; const pt = pg ? sdsBranchTotals(pg, T) : null;
+                    c.push(pt ? sdsRound(pt.per100) : null, (pt && pt.per100 !== null && tot.per100 !== null) ? sdsRound(tot.per100 - pt.per100) : null);
+                }
+                trRows.push(c);
+                sH.mu += tot.mu; sH.n += tot.n; sH.nd += nd;
+                if (tot.pts === null) sH.ptsOk = false; else sH.pts += tot.pts;
+            });
+            const shc = ['HASTANE TOPLAMI', sH.nd, sH.mu, sH.n, sdsRound(sdsPer100(sH.n, sH.mu)), sH.ptsOk ? sdsRound(sdsPer100(sH.pts, sH.mu)) : null, null];
+            if (R.hasPrev) {
+                let pm = 0, pn = 0; Object.values(gp).forEach(g => { const t = sdsBranchTotals(g, T); pm += t.mu; pn += t.n; });
+                const pv = sdsPer100(pn, pm), cv = sdsPer100(sH.n, sH.mu);
+                shc.push(sdsRound(pv), (pv !== null && cv !== null) ? sdsRound(cv - pv) : null);
+            }
+            const tid = 'brans_' + T;
+            sdsRegTable(tid, { title: `Standart 2 Görüntüleme – Branş Bazlı ${label} (${R.scope}; ${R.curName})`, headers: th, rows: trRows, pinned: [shc], notes, ints: [1, 2, 3] });
+            paneHtml += `<h4 style="margin:14px 0 6px;">${SDS.tables[tid].title}</h4><div id="sdsT_${tid}"></div>`;
+        });
+    }
+    sdsEl('sdsPane_brans').innerHTML = paneHtml;
     sdsDrawTable('brans');
+    if (showSep) selTypes.forEach(T => sdsDrawTable('brans_' + T));
     sdsRenderResp();
 }
 
@@ -2921,8 +3129,9 @@ function sdsDoctorRows(T) {
 }
 function sdsRenderHekim() {
     const R = SDS.res; R.flagged = [];
+    const selTypes = sdsSelectedTypes();
     let html = '';
-    ['MR', 'BT', 'USG', 'TOPLAM'].forEach(T => {
+    selTypes.forEach(T => {
         const rows = sdsDoctorRows(T);
         const label = T === 'TOPLAM' ? 'Görüntüleme Toplam' : T;
         const headers = ['Branş', 'Hekim', 'Muayene Sayısı', `${label} İstem Sayısı`, `100 Muayenede ${label} İstem`, 'İstenen Hasta Oranı (%)', 'Branş İçi Hekim Medyanı *', 'Diğer Hekimlerin Oranı (/100)', 'Fark (/100)', 'Fark (%)'];
@@ -2941,13 +3150,18 @@ function sdsRenderHekim() {
         html += `<h4 style="margin:14px 0 6px;">${SDS.tables['hek_' + T].title}</h4><div id="sdsT_hek_${T}"></div>`;
     });
     sdsEl('sdsPane_hekim').innerHTML = html;
-    ['MR', 'BT', 'USG', 'TOPLAM'].forEach(T => sdsDrawTable('hek_' + T));
+    selTypes.forEach(T => sdsDrawTable('hek_' + T));
 }
 
 /* ---------- Branş sorumluları ---------- */
 SDS.resp = {};
 try { SDS.resp = JSON.parse(localStorage.getItem('sds_sorumlu_v1') || '{}'); } catch (e) { SDS.resp = {}; }
-function sdsRespSave() { try { localStorage.setItem('sds_sorumlu_v1', JSON.stringify(SDS.resp)); } catch (e) { } }
+function sdsFlashSaved(msg) {
+    const el = sdsEl('sdsAutoSaveBadge');
+    if (!el) return;
+    el.innerText = msg || '✅ Yerel belleğe otomatik kaydedildi (' + new Date().toLocaleTimeString('tr-TR') + ')';
+}
+function sdsRespSave() { try { localStorage.setItem('sds_sorumlu_v1', JSON.stringify(SDS.resp)); sdsFlashSaved(); } catch (e) { } }
 function sdsRespOf(brans) { const r = SDS.resp[sdsBrKey(brans)]; return (r && r.kisi) ? r.kisi : (SDS.resp['*'] ? SDS.resp['*'].kisi : ''); }
 function sdsRespSet(key, ad, v) { SDS.resp[key] = { ad, kisi: v }; sdsRespSave(); if (SDS.res) sdsDrawTable('karar'); }
 function sdsRenderResp() {
@@ -2970,7 +3184,7 @@ function sdsRespBulk() {
         SDS.resp[sdsBrKey(ad)] = { ad, kisi }; c++;
     });
     sdsRespSave(); sdsRenderResp(); if (SDS.res) sdsDrawTable('karar');
-    alert(c + ' branş sorumlusu kaydedildi.');
+    showToast(c + ' branş sorumlusu kaydedildi.');
 }
 
 /* ---------- Karar kuralları ---------- */
@@ -2987,21 +3201,66 @@ const SDS_DEFAULT_RULES = [
 SDS.rules = null;
 try { SDS.rules = JSON.parse(localStorage.getItem('sds_kural_v1') || 'null'); } catch (e) { SDS.rules = null; }
 if (!Array.isArray(SDS.rules) || !SDS.rules.length) SDS.rules = JSON.parse(JSON.stringify(SDS_DEFAULT_RULES));
-function sdsRulesSave() { try { localStorage.setItem('sds_kural_v1', JSON.stringify(SDS.rules)); } catch (e) { } if (SDS.res) sdsRenderKarar(); }
+function sdsRulesSave() { try { localStorage.setItem('sds_kural_v1', JSON.stringify(SDS.rules)); sdsFlashSaved(); } catch (e) { } if (SDS.res) sdsRenderKarar(); }
+function sdsExportConfig() {
+    try {
+        const payload = { version: 1, exportedAt: new Date().toISOString(), resp: SDS.resp, rules: SDS.rules, karar: SDS.karar };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'SDS_Kurallar_ve_Sorumlular.json';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+        sdsFlashSaved('⬇️ Bilgisayara indirildi');
+    } catch (e) { showToast('Dışa aktarma hatası: ' + e.message); }
+}
+function sdsImportConfig(input) {
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data || typeof data !== 'object') throw new Error('Geçersiz JSON dosyası.');
+            if (data.resp && typeof data.resp === 'object') {
+                SDS.resp = data.resp;
+                localStorage.setItem('sds_sorumlu_v1', JSON.stringify(SDS.resp));
+            }
+            if (Array.isArray(data.rules) && data.rules.length) {
+                SDS.rules = data.rules;
+                localStorage.setItem('sds_kural_v1', JSON.stringify(SDS.rules));
+            }
+            if (data.karar && typeof data.karar === 'object') {
+                SDS.karar = data.karar;
+                localStorage.setItem('sds_karar_v1', JSON.stringify(SDS.karar));
+            }
+            sdsRenderResp();
+            sdsRenderRules();
+            if (SDS.res) sdsRenderKarar();
+            sdsFlashSaved('📂 Bilgisayardan yüklendi ve kaydedildi');
+        } catch (err) {
+            showToast('Dosya yüklenemedi: ' + err.message);
+        } finally {
+            input.value = '';
+        }
+    };
+    reader.readAsText(file, 'utf-8');
+}
 function sdsRuleSet(i, f, v) {
     const numF = ['minMu', 'minN', 'minV', 'minFark', 'minMed', 'minArtis', 'termin'];
     SDS.rules[i][f] = numF.includes(f) ? (v === '' ? '' : parseFloat(v)) : v;
     sdsRulesSave();
 }
 function sdsRuleMove(i, d) { const j = i + d; if (j < 0 || j >= SDS.rules.length) return; [SDS.rules[i], SDS.rules[j]] = [SDS.rules[j], SDS.rules[i]]; sdsRulesSave(); sdsRenderRules(); }
-function sdsRuleDel(i) { if (!confirm('Bu kural silinsin mi?')) return; SDS.rules.splice(i, 1); sdsRulesSave(); sdsRenderRules(); }
+function sdsRuleDel(i) {  SDS.rules.splice(i, 1); sdsRulesSave(); sdsRenderRules(); }
 function sdsRuleAdd() {
     const nr = { ad: 'Yeni kural', tur: '*', minMu: '', minN: '', minV: '', minFark: '', minMed: '', minArtis: '', termin: 30, not: '{tetkik}: 100 muayenede {oran} istem. İnceleme yapılacak.' };
     const free = SDS.rules.findIndex(r => ['minMu', 'minN', 'minV', 'minFark', 'minMed', 'minArtis'].every(k => r[k] === '') && r.tur === '*');
     if (free >= 0) SDS.rules.splice(free, 0, nr); else SDS.rules.push(nr);
     sdsRulesSave(); sdsRenderRules();
 }
-function sdsRuleReset() { if (!confirm('Tüm kurallar varsayılana dönsün mü?')) return; SDS.rules = JSON.parse(JSON.stringify(SDS_DEFAULT_RULES)); sdsRulesSave(); sdsRenderRules(); }
+function sdsRuleReset() {  SDS.rules = JSON.parse(JSON.stringify(SDS_DEFAULT_RULES)); sdsRulesSave(); sdsRenderRules(); }
 function sdsRenderRules() {
     const box = sdsEl('sdsRules'); if (!box) return;
     const num = (i, f, w) => `<input type="number" style="width:${w || 70}px; margin:0;" value="${SDS.rules[i][f]}" onchange="sdsRuleSet(${i},'${f}',this.value)">`;
@@ -3042,7 +3301,7 @@ function sdsKararSave(el) {
     try { localStorage.setItem('sds_karar_v1', JSON.stringify(SDS.karar)); } catch (e) { }
 }
 function sdsKararReset() {
-    if (!confirm('Bu dönemdeki elle girilmiş karar/sorumlu/termin/not değerleri silinip kural önerileri yeniden uygulansın mı?')) return;
+    
     (SDS.res.flagged || []).forEach(r => { delete SDS.karar[sdsKKey(r)]; });
     try { localStorage.setItem('sds_karar_v1', JSON.stringify(SDS.karar)); } catch (e) { }
     sdsRenderKarar();
@@ -3082,15 +3341,18 @@ function sdsRenderKarar() {
 
 /* ---------- Rapora ekle (hepsi) ---------- */
 function sdsAddQueue() {
-    if (!SDS.res) { alert('Önce analizi çalıştırın.'); return; }
-    const ids = ['brans', 'hek_MR', 'hek_BT', 'hek_USG', 'hek_TOPLAM'];
+    if (!SDS.res) { showToast('Önce analizi çalıştırın.'); return; }
+    const selTypes = sdsSelectedTypes();
+    const ids = ['brans'];
+    if (sdsEl('sdsBransSeparate') && sdsEl('sdsBransSeparate').checked) selTypes.forEach(T => ids.push('brans_' + T));
+    selTypes.forEach(T => ids.push('hek_' + T));
     if (SDS.res.flagged.length) ids.push('karar');
-    ids.forEach(id => queue.push(sdsTableItem(id)));
+    ids.forEach(id => { if (SDS.tables[id]) queue.push(sdsTableItem(id)); });
     renderQueue();
-    alert(`${ids.length} tablo (ekrandaki sıralama ve satır sınırıyla) rapora eklendi. "Sunum & Çıktı" sekmesinden Excel / Word / PPT indirebilirsiniz.`);
+    showToast(`${ids.length} tablo (ekrandaki sıralama ve satır sınırıyla) rapora eklendi. "Raporlama (Sunum & Çıktı)" sekmesinden Excel / Word / PPT indirebilirsiniz.`);
 }
 
-document.addEventListener('DOMContentLoaded', () => { try { sdsRenderRules(); sdsRenderResp(); } catch (e) { console.warn(e); } });
+document.addEventListener('DOMContentLoaded', () => { try { loadSavedAppState(); sdsRenderRules(); sdsRenderResp(); sdsRenderPeriods(); sdsFlashSaved('💾 Yerel kurallar ve sorumlular yüklendi'); } catch (e) { console.warn(e); } });
 </script>
 <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column; backdrop-filter: blur(2px);">
     <div style="font-size:3rem; margin-bottom:15px; animation: spin 1s linear infinite;">⏳</div>
@@ -3098,5 +3360,17 @@ document.addEventListener('DOMContentLoaded', () => { try { sdsRenderRules(); sd
         Filtre değişimi uygulanıyor, lütfen bekleyiniz...
     </div>
 </div>
+<div id="toastContainer" style="position:fixed; bottom:20px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:8px; max-width:380px;"></div>
+<script>
+function showToast(msg) {
+    const c = document.getElementById('toastContainer');
+    if (!c) return;
+    const d = document.createElement('div');
+    d.style.cssText = 'background:#1e293b; color:#fff; padding:10px 14px; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.25); font-size:0.85rem; line-height:1.4; border-left:4px solid #3b82f6; white-space:pre-line;';
+    d.textContent = String(msg);
+    c.appendChild(d);
+    setTimeout(() => { d.style.opacity = '0'; d.style.transition = 'opacity 0.3s'; setTimeout(() => d.remove(), 350); }, 4200);
+}
+</script>
 </body>
 </html>

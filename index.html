@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Analiz Pro v23.0 (Son İki Kelime ile Akıllı Eşleştirme & Çoklu Döküm)</title>
+    <title>Master Analiz Pro v24.0 (Güncel SDS Rehberi Uyumlu – Standart 2 Görüntüleme)</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -109,9 +109,9 @@
 </div>
 
 <header>
-    <h1><span>📊 Master Analiz Pro v23.0</span></h1>
+    <h1><span>📊 Master Analiz Pro v24.0</span></h1>
     <div style="display:flex; align-items:center; gap:8px;">
-        <span id="globalStatus" class="badge">Son 2 Kelime Eşleştirme Motoru Aktif</span>
+        <span id="globalStatus" class="badge">Güncel SDS Rehberi (Sürüm 3) Uyumlu</span>
         <button class="btn btn-info btn-sm" onclick="updateFromGitHub()" title="hamzakivrak.github.io/sds/ adresinden son sürümü çek">🔄 Güncelle</button>
         <button class="btn btn-warning btn-sm" onclick="saveState()">💾 Ayarları Kaydet</button>
     </div>
@@ -121,8 +121,9 @@
     <aside class="sidebar">
         <button class="tab-btn active" onclick="switchTab('tab-upload')">📁 Dosya Yönetimi</button>
         <button class="tab-btn" onclick="switchTab('tab-data')">🔍 Veri ve Filtreleme</button>
+        <button class="tab-btn" onclick="switchTab('tab-sds')" style="color:#7c3aed; font-weight:bold;">🆕 Güncel SDS (Std. 2)</button>
         <button class="tab-btn" onclick="switchTab('tab-analysis')">📈 Genel Analiz</button>
-        <button class="tab-btn" onclick="switchTab('tab-radiology')">🏥 Hasta Başı Rapor</button>
+        <button class="tab-btn" onclick="switchTab('tab-radiology')">🏥 Hekim İstem Raporu (100 Muayene)</button>
         <button class="tab-btn" onclick="switchTab('tab-statistics')">📉 İstatistiksel Analiz</button>
         <button class="tab-btn" onclick="switchTab('tab-repeated')">🔄 Tekrarlı İşlemler</button>
         <button class="tab-btn" onclick="switchTab('tab-export')">📑 Sunum & Çıktı</button>
@@ -171,6 +172,106 @@
             </div>
         </div>
  
+        <div id="tab-sds" class="tab-content">
+            <div class="card" style="border:2px solid #7c3aed;">
+                <h3 style="color:#7c3aed;">🆕 Güncel SDS – Görüntüleme (Standart 2) Analizi
+                    <button class="help-btn" onclick="toggleHelp('h-sds')">❓ Kullanım Rehberi</button></h3>
+                <div id="h-sds" class="help-content" style="display:block;">
+                    <b>Bu sekme ne yapar?</b> "Güncel SDS Uygulama Rehberi – Hastane (Sürüm 3)" Standart 2 (Görüntüleme) ölçütlerine göre MR / BT / USG istemlerini <b>100 muayenede istem sayısı</b> cinsinden hesaplar.<br>
+                    <b>Adım adım kullanım:</b>
+                    <ol style="margin:6px 0 6px 18px; padding:0;">
+                        <li><b>📁 Dosya Yönetimi</b> sekmesinden ay dosyalarını yükleyin (çeyrek için 3 ay: ör. Eylül–Ekim–Kasım).</li>
+                        <li>Yukarıdaki <b>Analiz Kapsamı</b>nı seçin (Poliklinik 2.1 / Acil 2.2 / Klinik 2.3 veya Tümü).</li>
+                        <li><b>1) Sütun Eşleştirme</b>: Program sütunları otomatik bulur. Dosyanızda farklı adlar varsa açılır listelerden kendiniz seçin.</li>
+                        <li><b>2) Dönem Seçimi</b>: "Güncel dönem" için ayları işaretleyin. İsterseniz "Önceki dönem" aylarını da işaretleyin (kıyas için).</li>
+                        <li><b>3) Analiz Et</b> düğmesine basın. Sonuçlar <b>BRANŞ | HEKİM | KARAR</b> sekmelerinde görünür.</li>
+                        <li><b>➕ Rapora Ekle</b> ile tabloları kuyruğa alın; <b>📑 Sunum &amp; Çıktı</b> sekmesinden Excel / Word / PPT indirin.</li>
+                    </ol>
+                    <b>Temel kurallar (rehbere göre):</b>
+                    <ul style="margin:4px 0 0 18px; padding:0;">
+                        <li><b>100 muayenede istem</b> = (istem sayısı ÷ muayene sayısı) × 100. Yüzde değildir, 100'ü aşabilir.</li>
+                        <li><b>İstenen hasta oranı</b> ayrı hesaplanır: (en az 1 istem yapılan tekil hasta ÷ muayene) × 100 (hasta numarası sütunu eşleşirse).</li>
+                        <li>Branş ve hastane toplamları <u>toplam sayılardan</u> hesaplanır; hekim oranlarının ortalaması alınmaz.</li>
+                        <li>Hekim, aynı branştaki <b>diğer hekimlerin birleşik oranı</b> ile kıyaslanır. Branş ortalaması/medyanı <b>hedef değildir</b>, bilgi amaçlıdır.</li>
+                        <li><b>Yüksek değer otomatik uygunsuzluk veya DİF değildir.</b> "Klinik inceleme önceliği" sadece incelemeye başlama işaretidir. Akış: klinik uygunluk → ek inceleme → doğrulanmış uygunsuzluk ise DİF (sorumlu, termin, etkinlik ölçümü).</li>
+                        <li>Başhekim değerlendirme toplantısı çeyrek dönem sonrasındaki ayın ilk 15 günü içinde yapılır.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>1) Sütun Eşleştirme <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(otomatik bulunur, gerekirse kendiniz değiştirin)</span>
+                    <button class="btn btn-sm btn-outline" onclick="sdsPopulate(true)">🔄 Sütunları Yeniden Tara</button></h3>
+                <div id="sdsMapInfo" style="font-size:0.85rem; color:#b45309; margin-bottom:10px;">Önce Dosya Yönetimi sekmesinden veri yükleyin.</div>
+
+                <div id="sdsMapNew" style="display:none; background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #cbd5e1; margin-bottom:12px;">
+                    <h4 style="margin:0 0 8px; color:#0369a1;">Yeni Format (tek dosyada tüm birimler)</h4>
+                    <div class="grid-4">
+                        <div><label>Branş sütunu</label><select id="sdsBrans"></select></div>
+                        <div><label>Hekim sütunu</label><select id="sdsDoktor"></select></div>
+                        <div><label>Tetkik türü sütunu (MR/BT/USG ayrımı)</label><select id="sdsTur"></select></div>
+                        <div><label>Adet sütunu <small>(boşsa her satır = 1 istem)</small></label><select id="sdsAdet"></select></div>
+                        <div><label>Hasta no / protokol <small>(tekil hasta için, isteğe bağlı)</small></label><select id="sdsHasta"></select></div>
+                        <div><label>Özet sayfası: "Branş ve Doktor" sütunu</label><select id="sdsSumBrDr"></select></div>
+                        <div><label>Özet sayfası: Branş sütunu</label><select id="sdsSumBrans"></select></div>
+                        <div><label>Muayene sayısı sütun(lar)ı <small>(boş = birim filtresine göre otomatik)</small></label><select id="sdsSumMuayene" multiple style="height:70px;"></select></div>
+                    </div>
+                </div>
+
+                <div id="sdsMapOld" style="display:none; background:#fffbeb; padding:12px; border-radius:6px; border:1px solid #fde68a;">
+                    <h4 style="margin:0 0 8px; color:#b45309;">Eski Format (ayrı Poliklinik / Acil / Klinik dosyaları)</h4>
+                    <div class="grid-4">
+                        <div><label>Branş sütunu</label><select id="sdsOldBrans"></select></div>
+                        <div><label>Hekim sütunu</label><select id="sdsOldDoktor"></select></div>
+                        <div><label>USG sütunu</label><select id="sdsOldUSG"></select></div>
+                        <div><label>MR sütunu</label><select id="sdsOldMR"></select></div>
+                        <div><label>BT sütunu</label><select id="sdsOldBT"></select></div>
+                        <div><label>Muayene sayısı sütunu <small>(boşsa her satır = 1 muayene)</small></label><select id="sdsOldMuayene"></select></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>2) Dönem Seçimi ve Ayarlar</h3>
+                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:260px; background:#f0fdf4; padding:12px; border:1px solid #bbf7d0; border-radius:6px;">
+                        <label style="color:#166534; font-weight:bold;">Güncel dönem (işaretli aylar toplanır)</label>
+                        <div id="sdsCurMonths" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
+                        <label>Dönem adı</label>
+                        <input type="text" id="sdsCurName" list="sdsPeriodList" placeholder="Örn: Eylül–Kasım 2026">
+                    </div>
+                    <div style="flex:1; min-width:260px; background:#fff7ed; padding:12px; border:1px solid #fed7aa; border-radius:6px;">
+                        <label style="color:#9a3412; font-weight:bold;">Önceki dönem (isteğe bağlı kıyas)</label>
+                        <div id="sdsPrevMonths" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
+                        <label>Dönem adı</label>
+                        <input type="text" id="sdsPrevName" list="sdsPeriodList" placeholder="Örn: Haziran–Ağustos 2026">
+                    </div>
+                    <datalist id="sdsPeriodList"><option value="Eylül–Kasım"><option value="Aralık–Şubat"><option value="Mart–Mayıs"><option value="Haziran–Ağustos"></datalist>
+                </div>
+                <div class="grid-4" style="margin-top:12px;">
+                    <div><label>Min. muayene sayısı <small>(altında "yetersiz örneklem")</small></label><input type="number" id="sdsMinMu" value="30" min="1"></div>
+                    <div><label>İnceleme eşiği: diğer hekimlerden fark (%) <small>(kurum içi ayar)</small></label><input type="number" id="sdsEsik" value="50" min="0"></div>
+                    <div style="grid-column: span 2; display:flex; align-items:flex-end;">
+                        <button class="btn btn-success" style="width:100%; height:42px; background:#7c3aed;" onclick="sdsRun()">▶️ 3) Analiz Et (Standart 2 – Görüntüleme)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sdsResults" class="card" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:12px;">
+                    <div id="sdsSubTabs" style="display:flex; gap:6px;">
+                        <button class="btn btn-primary btn-sm" id="sdsTabBtn_brans" onclick="sdsSub('brans')">BRANŞ</button>
+                        <button class="btn btn-secondary btn-sm" id="sdsTabBtn_hekim" onclick="sdsSub('hekim')">HEKİM</button>
+                        <button class="btn btn-secondary btn-sm" id="sdsTabBtn_karar" onclick="sdsSub('karar')">KARAR</button>
+                    </div>
+                    <button class="btn btn-warning btn-sm" onclick="sdsAddQueue()">➕ Tümünü Rapora Ekle</button>
+                </div>
+                <div id="sdsPane_brans"></div>
+                <div id="sdsPane_hekim" style="display:none;"></div>
+                <div id="sdsPane_karar" style="display:none;"></div>
+            </div>
+        </div>
+
         <div id="tab-analysis" class="tab-content">
             <div class="card" style="border:2px solid var(--primary);">
                 <h3 style="color:var(--primary); margin-top:0;">⚙️ Dinamik Sütun Eşleştirme (Genel Analiz)</h3>
@@ -249,7 +350,7 @@
             </div>
 
             <div class="card">
-                <h3>Hasta Başı / Doktor Analizi</h3>
+                <h3>Hekim Bazlı 100 Muayenede İstem Analizi</h3>
                 <div class="toggle-switch"><input type="checkbox" id="chkCompareRad" checked><label for="chkCompareRad">Yüklenen Diğer Ayları da Kıyaslamaya Dahil Et</label></div>
  
                 <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border);">
@@ -323,9 +424,9 @@
                     <div>
                        <label>Analiz Edilecek Tür</label>
                        <select id="statFocus">
-                           <option value="tetkik">Seçili Tetkik Sayısı</option>
-                           <option value="total">Toplam Hasta Sayısı</option>
-                           <option value="ratio">Tetkik / Hasta Sayısı (%)</option>
+                           <option value="tetkik">Seçili Tetkik İstem Sayısı</option>
+                           <option value="total">Toplam Muayene (Hasta) Sayısı</option>
+                           <option value="ratio">100 Muayenede Tetkik İstem Sayısı</option>
                         </select>
                     </div>
                     <div>
@@ -441,7 +542,7 @@
 <script>
     // --- GITHUB GÜNCELLEME & ÇEVRİMDIŞI ÖNBELLEK (CACHE) YÖNETİMİ ---
     const GITHUB_SDS_URL = "https://hamzakivrak.github.io/sds/";
-    const CACHE_STORAGE_KEY = "sds_cached_html_v23";
+    const CACHE_STORAGE_KEY = "sds_cached_html_v24";
 
     async function checkConnectionAndCache() {
         const banner = document.getElementById('offlineBanner');
@@ -644,6 +745,7 @@
  
     function toggleHelp(id) { document.getElementById(id).style.display = document.getElementById(id).style.display === 'block' ? 'none' : 'block'; }
     function switchTab(tabId) {
+        if (tabId === 'tab-sds' && typeof sdsPopulate === 'function') setTimeout(sdsPopulate, 0);
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
@@ -770,10 +872,14 @@
             }
         }
         
+        const ovl = document.getElementById('loadingOverlay'), ovt = document.getElementById('loadingText');
+        if (ovt) ovt.innerText = `${fileObj.name} okunuyor (büyük dosyalarda biraz sürebilir)...`;
+        ovl.style.display = 'flex';
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onerror = () => { ovl.style.display = 'none'; infoDiv.innerHTML = '<span style="color:#dc2626">Dosya okunamadı.</span>'; };
+        reader.onload = (e) => { setTimeout(() => { try {
             const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, {type: 'array'});
+            const wb = XLSX.read(data, {type: 'array', dense: true, cellFormula: false, cellHTML: false, cellStyles: false, cellNF: false, cellText: false});
             targetApp.workbook = wb;
             targetApp.sheetNames = wb.SheetNames;
             
@@ -787,7 +893,14 @@
             });
             
             targetApp.sheetNames.forEach(sn => {
-                let headers = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header: 1})[0] || [];
+                let headers = [];
+                try {
+                    const ws0 = wb.Sheets[sn];
+                    if (ws0 && ws0['!ref']) {
+                        const rg = XLSX.utils.decode_range(ws0['!ref']);
+                        headers = XLSX.utils.sheet_to_json(ws0, {header: 1, range: XLSX.utils.encode_range({s:{r:rg.s.r,c:rg.s.c}, e:{r:rg.s.r,c:rg.e.c}})})[0] || [];
+                    }
+                } catch (err) { headers = []; }
                 let isDetail = false;
                 let isSummary = false;
                 
@@ -834,11 +947,13 @@
             }
 
             applyGlobalFilters();
+            } catch (err) { console.error(err); ovl.style.display = 'none'; infoDiv.innerHTML = `<span style="color:#dc2626">Okuma hatası: ${err.message}</span>`; } }, 30);
         };
         reader.readAsArrayBuffer(fileObj);
     }
 
     function applyGlobalFilters() {
+        const _t = document.getElementById('loadingText'); if (_t) _t.innerText = 'Filtre değişimi uygulanıyor, lütfen bekleyiniz...';
         document.getElementById('loadingOverlay').style.display = 'flex';
         
         setTimeout(() => {
@@ -906,6 +1021,7 @@
             
             renderTable();
             updateTetkikList();
+            if (typeof sdsPopulate === 'function') { try { sdsPopulate(); } catch (e) { console.warn(e); } }
 
             const warnHtml = '<div style="padding:15px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; text-align:center; font-weight:bold;">⚠️ Analiz Kapsamı (Birim Tipi) değiştirildi. Lütfen "Tümünü Analiz Et" butonlarına tekrar basınız.</div>';
             let genContainer = document.getElementById('genResultsContainer');
@@ -927,7 +1043,9 @@
         let filteredRaw = raw.filter(r => {
             let textToSearch = String(r['Tetkik Adı'] || r['Hizmet Adı'] || r['USG - Hizmet Adı'] || '').toLowerCase();
             let codeToSearch = String(r['Hizmet Kodu'] || r['Tetkik Kodu'] || '').toLowerCase();
-            return !BLACKLIST.some(b => textToSearch.includes(b) || codeToSearch.includes(b));
+            if (!textToSearch && !codeToSearch) return true;
+            for (let i = 0; i < BLACKLIST.length; i++) { const b = BLACKLIST[i]; if (textToSearch.includes(b) || codeToSearch.includes(b)) return false; }
+            return true;
         });
 
         if (filteredRaw.length === 0) { p.data = []; return "BOŞ VEYA FİLTRELENMİŞ DOSYA"; }
@@ -948,6 +1066,7 @@
         let finalData = [];
 
         if (isNewFormat) {
+            const hastaCol = keys.find(k => getSafeStr(k).replace(/\s+/g, '').includes('hastatur'));
             filteredRaw.forEach(r => {
                 let newRow = { ...r };
                 let tt = String(r['Tetkik Türü'] || '').toUpperCase();
@@ -956,7 +1075,6 @@
                 else if (tt.includes('REZONANS') || tt.includes('MR')) newRow['Tetkik Türü_STD'] = 'MR';
                 else newRow['Tetkik Türü_STD'] = r['Tetkik Türü'];
 
-                let hastaCol = Object.keys(r).find(k => getSafeStr(k).replace(/\s+/g, '').includes('hastatur'));
                 let hastaTuru = hastaCol ? getSafeStr(r[hastaCol]) : "";
                 
                 let birim = 'Poliklinik';
@@ -1001,7 +1119,9 @@
         if(Object.keys(p.filters).length === 0) {
             p.filtered = [...temp];
         } else {
-            p.filtered = temp.filter(r => Object.keys(p.filters).every(k => p.filters[k].includes(String(r[k]))));
+            const fk = Object.keys(p.filters);
+            const fsets = fk.map(k => new Set(p.filters[k].map(String)));
+            p.filtered = temp.filter(r => { for (let i = 0; i < fk.length; i++) { if (!fsets[i].has(String(r[fk[i]]))) return false; } return true; });
         }
     }
 
@@ -1089,7 +1209,7 @@
                     let cur = Array.from(el.selectedOptions).map(o=>o.value);
                     let isMultiple = el.hasAttribute('multiple');
                     el.innerHTML = isMultiple ? '' : '<option value="">-- Seçiniz --</option>';
-                    headers.forEach(h => el.innerHTML += `<option value="${h}">${h}</option>`);
+                    el.innerHTML += headers.map(h => `<option value="${h}">${h}</option>`).join('');
                     
                     if(!isMultiple && cur.length && headers.includes(cur[0])) el.value = cur[0];
                     if(isMultiple && cur.length) {
@@ -1117,12 +1237,14 @@
 
             const rep = document.getElementById('repCols');
             if (rep.innerHTML === "") {
+                let repHtml = '';
                 headers.forEach(h => {
                     let low = h.toLowerCase();
                     let isChecked = (low.includes('doktor') || low.includes('dr.') || low.includes('hekim') || low.includes('protokol') || low.includes('hasta') || low === 'tc' || low.includes('ad soyad'));
                     const safeH = h.replace(/"/g, '&quot;');
-                    rep.innerHTML += `<div class="cb-item"><input type="checkbox" value="${safeH}" ${isChecked ? 'checked' : ''}><label>${h}</label></div>`;
+                    repHtml += `<div class="cb-item"><input type="checkbox" value="${safeH}" ${isChecked ? 'checked' : ''}><label>${h}</label></div>`;
                 });
+                rep.innerHTML = repHtml;
             }
         }
 
@@ -1136,7 +1258,7 @@
                     let cur = Array.from(el.selectedOptions).map(o=>o.value);
                     let isMultiple = el.hasAttribute('multiple');
                     el.innerHTML = isMultiple ? '' : '<option value="">-- Seçiniz --</option>';
-                    oldHeaders.forEach(h => el.innerHTML += `<option value="${h}">${h}</option>`);
+                    el.innerHTML += oldHeaders.map(h => `<option value="${h}">${h}</option>`).join('');
                     
                     if(!isMultiple && cur.length && oldHeaders.includes(cur[0])) el.value = cur[0];
                     if(isMultiple && cur.length) {
@@ -1296,34 +1418,31 @@
             valCol = valOptions.length > valColIndex ? valOptions[valColIndex].value : (valOptions[0] ? valOptions[0].value : null);
         }
 
+        let oldColToUse = null, oldVals = [];
+        if (p.isOldFormat) {
+            let tUp = getSafeStr(targetTetkik || "");
+            oldVals = Array.from(document.getElementById('oldAnlVal').selectedOptions).map(o=>o.value);
+            let bestMatch = oldVals.find(ov => {
+                let ovSafe = getSafeStr(ov);
+                if ((tUp.includes('usg') || tUp.includes('ultrason') || tUp.includes('doppler')) && (ovSafe.includes('usg') || ovSafe.includes('ultrason') || ovSafe.includes('doppler'))) return true;
+                if ((tUp.includes('mr') || tUp.includes('rezonans')) && (ovSafe.includes('mr') || ovSafe.includes('rezonans'))) return true;
+                if ((tUp.includes('bt') || tUp.includes('tomografi')) && (ovSafe.includes('bt') || ovSafe.includes('tomografi'))) return true;
+                return ovSafe.includes(tUp) || tUp.includes(ovSafe);
+            });
+            if (bestMatch) oldColToUse = bestMatch;
+            else if (tUp.includes('usg') || tUp.includes('ultrason') || tUp.includes('doppler')) oldColToUse = document.getElementById('oldMapUSG').value;
+            else if (tUp.includes('mr') || tUp.includes('rezonans')) oldColToUse = document.getElementById('oldMapMR').value;
+            else if (tUp.includes('bt') || tUp.includes('tomografi')) oldColToUse = document.getElementById('oldMapBT').value;
+        }
+
         p.filtered.forEach(r => {
             let k = r[cCat] || "(Boş)";
             let v = 0;
 
             if (p.isOldFormat) {
                 let valToUse = 0;
-                let tUp = getSafeStr(targetTetkik || "");
-                let oldVals = Array.from(document.getElementById('oldAnlVal').selectedOptions).map(o=>o.value);
-                let colToUse = null;
-                
-                let bestMatch = oldVals.find(ov => {
-                    let ovSafe = getSafeStr(ov);
-                    if ((tUp.includes('usg') || tUp.includes('ultrason') || tUp.includes('doppler')) && (ovSafe.includes('usg') || ovSafe.includes('ultrason') || ovSafe.includes('doppler'))) return true;
-                    if ((tUp.includes('mr') || tUp.includes('rezonans')) && (ovSafe.includes('mr') || ovSafe.includes('rezonans'))) return true;
-                    if ((tUp.includes('bt') || tUp.includes('tomografi')) && (ovSafe.includes('bt') || ovSafe.includes('tomografi'))) return true;
-                    return ovSafe.includes(tUp) || tUp.includes(ovSafe);
-                });
-
-                if (bestMatch) {
-                    colToUse = bestMatch;
-                } else {
-                    if (tUp.includes('usg') || tUp.includes('ultrason') || tUp.includes('doppler')) colToUse = document.getElementById('oldMapUSG').value;
-                    else if (tUp.includes('mr') || tUp.includes('rezonans')) colToUse = document.getElementById('oldMapMR').value;
-                    else if (tUp.includes('bt') || tUp.includes('tomografi')) colToUse = document.getElementById('oldMapBT').value;
-                }
-
-                if (colToUse) {
-                    valToUse = customAgg(r[colToUse], op); 
+                if (oldColToUse) {
+                    valToUse = customAgg(r[oldColToUse], op); 
                 } else if (oldVals.length === 1) {
                     valToUse = customAgg(r[oldVals[0]], op);
                 } else if (!targetTetkik && oldVals.length > 0) {
@@ -1602,7 +1721,7 @@
         if(!p1 || p1.data.length===0) { alert("Önce 1. Ay verisini yükleyin."); return; }
 
         if (!p1.isOldFormat) {
-            if(!cols.brans || !cols.dr || !cols.tetkikTuru) { alert("Lütfen Yeni Versiyon için Branş, Doktor ve Teftiş Türü sütunlarını seçiniz."); return; }
+            if(!cols.brans || !cols.dr || !cols.tetkikTuru) { alert("Lütfen Yeni Versiyon için Branş, Hekim ve Tetkik Türü sütunlarını seçiniz."); return; }
         } else {
             if(!oldCols.brans || !oldCols.dr) { alert("Lütfen Eski Versiyon için Branş ve Doktor sütunlarını seçiniz."); return; }
         }
@@ -1694,7 +1813,7 @@
             }
             
             let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
-            let newTitle = `${scopeName}-Hasta/${tTypeOnly} Analizi`;
+            let newTitle = `${scopeName} - 100 Muayenede ${tTypeOnly} İstem Analizi (Hekim)`;
 
             let resObj = { type:'rad', data: finalList, compare, total: grandTotal, title: newTitle, sortKey: sKey, tTypeOnly: tTypeOnly, uniqueId: `rad_${idx}_${Date.now()}` };
             APP.lastRadList.push(resObj); 
@@ -1813,7 +1932,7 @@
                 let lower = (mean - margin).toFixed(1);
                 if (parseFloat(lower) < 0) lower = "0.0";
                 let upper = (mean + margin).toFixed(1);
-                obj.ci = focusVal === 'ratio' ? `%${lower} - %${upper}` : `${lower} - ${upper}`;
+                obj.ci = `${lower} - ${upper}`;
                 obj.max = focusVal === 'ratio' ? Math.max(...vals).toFixed(1) : Math.max(...vals);
                 obj.min = focusVal === 'ratio' ? Math.min(...vals).toFixed(1) : Math.min(...vals);
                 
@@ -1830,7 +1949,7 @@
             let scopeName = APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Genel';
             let confPercent = zScore === 1.645 ? '%90' : (zScore === 1.96 ? '%95' : '%99');
             let titleName = groupType === 'branch' ? 'Branş Bazlı' : (groupType === 'doctor' ? 'Hekim Bazlı' : 'Branş-Hekim');
-            let modeLabel = focusVal === 'ratio' ? `${targetTetkik}/Hasta (%)` : (focusVal === 'total' ? `Toplam Hasta` : `${targetTetkik}`);
+            let modeLabel = focusVal === 'ratio' ? `100 Muayenede ${targetTetkik} İstem` : (focusVal === 'total' ? `Toplam Muayene Sayısı` : `${targetTetkik} İstem Sayısı`);
             let resTitle = `${scopeName}-${titleName} / ${modeLabel} Analizi (${confPercent} GA)`;
 
             let resObj = { data: resultData, validMonths, focus: focusVal, targetTetkik, title: resTitle, uniqueId: `stat_${idx}_${Date.now()}` };
@@ -1848,8 +1967,8 @@
         const isRatio = res.focus === 'ratio';
 
         let thHtml = `<tr><th>Branş</th><th>Doktor</th>`;
-        res.validMonths.forEach(m => thHtml += `<th class="month-col">${m}. Ay ${isRatio ? '%' : 'Değer'}</th>`);
-        thHtml += `<th style="background:#f1f5f9;">Ortalama</th><th style="background:#e0e7ff; color:#3730a3;">S.Sapma</th><th style="background:#ecfdf5; color:#065f46;">G.A. (Alt-Üst)</th><th style="color:#ca8a04;">Max</th><th style="color:#94a3b8;">Min</th><th>${isRatio ? 'Genel %' : 'Toplam'}</th></tr>`;
+        res.validMonths.forEach(m => thHtml += `<th class="month-col">${m}. Ay ${isRatio ? '/100' : 'Değer'}</th>`);
+        thHtml += `<th style="background:#f1f5f9;">Ortalama</th><th style="background:#e0e7ff; color:#3730a3;">S.Sapma</th><th style="background:#ecfdf5; color:#065f46;">G.A. (Alt-Üst)</th><th style="color:#ca8a04;">Max</th><th style="color:#94a3b8;">Min</th><th>${isRatio ? 'Genel (/100)' : 'Toplam'}</th></tr>`;
 
         div.innerHTML = `
             <div class="result-header"><strong>${res.title}</strong></div>
@@ -1866,14 +1985,14 @@
             html += `<tr><td>${r.brans}</td><td>${r.doktor}</td>`;
             res.validMonths.forEach(m => {
                 let cellVal = r.history[m] !== undefined ? r.history[m] : 0;
-                html += `<td class="month-col">${isRatio ? '%' + cellVal : cellVal}</td>`;
+                html += `<td class="month-col">${cellVal}</td>`;
             });
-            html += `<td style="background:#f8fafc; font-weight:bold;">${isRatio ? '%' + r.avg : r.avg}</td>
-                     <td style="background:#eef2ff; color:#3730a3;">±${isRatio ? '%' + r.sd : r.sd}</td>
+            html += `<td style="background:#f8fafc; font-weight:bold;">${r.avg}</td>
+                     <td style="background:#eef2ff; color:#3730a3;">±${r.sd}</td>
                      <td style="background:#f0fdf4; color:#065f46; font-size:0.75rem;">${r.ci}</td>
-                     <td style="color:#ca8a04;">${isRatio ? '%' + r.max : r.max}</td>
-                     <td style="color:#94a3b8;">${isRatio ? '%' + r.min : r.min}</td>
-                     <td style="font-weight:bold; color:var(--primary);">${isRatio ? '%' + r.totalSum : r.totalSum}</td></tr>`;
+                     <td style="color:#ca8a04;">${r.max}</td>
+                     <td style="color:#94a3b8;">${r.min}</td>
+                     <td style="font-weight:bold; color:var(--primary);">${r.totalSum}</td></tr>`;
         });
         tb.querySelector('tbody').innerHTML = html;
 
@@ -1901,7 +2020,7 @@
             }
         }
 
-        let thHtml = `<tr><th>Kategori</th><th>1. Ay Değer</th><th>% Pay</th>`;
+        let thHtml = `<tr><th>Kategori</th><th>1. Ay Değer</th><th>Pay (%)</th>`;
         actMonths.forEach(m => { thHtml += `<th class="month-col">${m}. Ay Değer</th><th>% Pay</th><th>Fark(1-${m}) %</th>`; });
         thHtml += `</tr>`;
 
@@ -1959,11 +2078,11 @@
 
         let tType = res.tTypeOnly; 
 
-        let thHtml = `<tr><th>Branş</th><th>Doktor</th><th>1. Ay Havuz Hasta Sayısı</th><th>1. Ay Doktor Hasta Sayısı</th>`;
-        thHtml += `<th>1. Ay Dr. ${tType} Sayısı</th><th>1. Ay %Dr</th><th>1. Ay %Br</th>`;
+        let thHtml = `<tr><th>Branş</th><th>Doktor</th><th>1. Ay Branş Toplam Muayene</th><th>1. Ay Hekim Muayene Sayısı</th>`;
+        thHtml += `<th>1. Ay Hekim ${tType} İstem Sayısı</th><th>1. Ay 100 Muayenede ${tType} İstem</th><th>1. Ay Hekim İstemi / Branş Muayenesi (×100)</th>`;
         
         actMonths.forEach(m => {
-            thHtml += `<th class="month-col">${m}. Ay Dr. ${tType} Sayısı</th><th>Fark(1-${m}) %</th>`;
+            thHtml += `<th class="month-col">${m}. Ay Hekim ${tType} İstem Sayısı</th><th>Değişim (1→${m})</th>`;
         });
         thHtml += `</tr>`;
 
@@ -1981,7 +2100,7 @@
         let html = "";
         res.data.forEach(d => {
             let r = `<tr class="${d.isOther?'row-others':''}"><td>${d.brans}</td><td>${d.doktor}</td><td style="color:#666">${d.branchPool}</td><td><b>${d.total}</b></td>`;
-            r += `<td>${d[tType]}</td><td style="background:#ecfdf5">%${d[tType+'P']}</td><td style="background:#d1fae5">%${d[tType+'BrP']}</td>`;
+            r += `<td>${d[tType]}</td><td style="background:#ecfdf5">${d[tType+'P']}</td><td style="background:#d1fae5">${d[tType+'BrP']}</td>`;
 
             actMonths.forEach(m => {
                 let hm = d.history[m] || {};
@@ -2109,93 +2228,71 @@ function toggleAllCharts(type) {
         document.getElementById('previewModal').style.display='block';
     }
  
-    function downloadExcel() {
-        if(!confirm("Excel indirmek istiyor musunuz?")) return;
-        if(queue.length===0) return alert("Kuyruk boş");
+    // Kuyruktaki bir rapor öğesini düz tablo (başlık + satırlar) haline getirir (Excel ve Word ortak kullanır)
+    function queueToAoa(q) {
+        let aoa = [];
+        if (q.type === 'tbl') {
+            aoa.push(q.headers);
+            q.rows.forEach(r => aoa.push(r.map(c => (c === null || c === undefined) ? '-' : c)));
+            return aoa;
+        }
+        if (q.type === 'stat') {
+            const isRatio = q.focus === 'ratio';
+            let h = ['Branş','Hekim'];
+            q.validMonths.forEach(m => h.push(`${m}. Ay ${isRatio ? '(100 muayenede)' : 'Değer'}`));
+            h.push('Ortalama', 'Standart Sapma', 'Güven Aralığı (Alt-Üst)', 'En Yüksek', 'En Düşük', isRatio ? 'Genel (100 muayenede)' : 'Toplam');
+            aoa.push(h);
+            q.data.forEach(d => {
+                let r = [d.brans, d.doktor];
+                q.validMonths.forEach(m => r.push(d.history[m] !== undefined ? d.history[m] : 0));
+                r.push(d.avg, `±${d.sd}`, d.ci, d.max, d.min, d.totalSum);
+                aoa.push(r);
+            });
+            return aoa;
+        }
+        let actMonths = [];
+        if (q.compare) { for (let m = 2; m <= APP.monthCount; m++) { if (q.data[0] && q.data[0].history && q.data[0].history[m] !== undefined) actMonths.push(m); } }
+        if (q.type === 'gen') {
+            let h = ['Kategori', '1. Ay Değer', '1. Ay Pay (%)'];
+            actMonths.forEach(m => { h.push(`${m}. Ay Değer`, `${m}. Ay Pay (%)`, `Değişim (1→${m}) %`); });
+            aoa.push(h);
+            q.data.forEach(d => {
+                let r = [d.category, d.value, d.percent];
+                actMonths.forEach(m => { r.push(d.history[m].val, d.history[m].pct, getPctArrowText(d.value, d.history[m].val)); });
+                aoa.push(r);
+            });
+            let tr = ['GENEL TOPLAM', q.total, '100'];
+            actMonths.forEach(m => { let ht = q.hTotals[m] || 0; tr.push(ht, '100', getPctArrowText(q.total, ht)); });
+            aoa.push(tr);
+        } else if (q.type === 'rad') {
+            let tType = q.tTypeOnly;
+            let h = ['Branş','Hekim','1. Ay Branş Toplam Muayene','1. Ay Hekim Muayene Sayısı', `1. Ay Hekim ${tType} İstem Sayısı`, `1. Ay 100 Muayenede ${tType} İstem`, '1. Ay Hekim İstemi / Branş Muayenesi (×100)'];
+            actMonths.forEach(m => { h.push(`${m}. Ay Hekim ${tType} İstem Sayısı`, `Değişim (1→${m}) %`); });
+            aoa.push(h);
+            q.data.forEach(d => {
+                let r = [d.brans, d.doktor, d.branchPool, d.total, d[tType], d[tType+'P'], d[tType+'BrP']];
+                actMonths.forEach(m => { let hv = (d.history[m] || {})[tType] || 0; r.push(hv, getPctArrowText(d[tType], hv)); });
+                aoa.push(r);
+            });
+        } else if (q.type === 'rep') {
+            aoa.push(['Anahtar', 'Tekrar', 'Hizmetler']);
+            q.data.forEach(d => aoa.push([d[0], d[1].count, q.srvCol ? d[1].services.join(', ') : '']));
+        }
+        return aoa;
+    }
+
+    function downloadExcel(skipConfirm) {
+        if (queue.length === 0) return alert("Kuyruk boş");
+        if (skipConfirm !== true && !confirm("Excel indirmek istiyor musunuz?")) return;
         let wb = XLSX.utils.book_new();
         queue.forEach((q, i) => {
-            let ws_data = [];
-            
-            if(q.type==='stat') {
-                const isRatio = q.focus === 'ratio';
-                let h = ['Branş','Doktor'];
-                q.validMonths.forEach(m => h.push(`${m}. Ay ${isRatio ? '%' : 'Değer'}`));
-                h.push('Ortalama', 'S.Sapma', 'G.A. (Alt-Üst)', 'Max', 'Min', isRatio ? 'Genel %' : 'Toplam');
-                ws_data.push(h);
-
-                q.data.forEach(d => {
-                    let r = [d.brans, d.doktor];
-                    q.validMonths.forEach(m => {
-                        let v = d.history[m] !== undefined ? d.history[m] : 0;
-                        r.push(isRatio ? `%${v}` : v);
-                    });
-                    r.push(
-                        isRatio ? `%${d.avg}` : d.avg,
-                        isRatio ? `±%${d.sd}` : d.sd,
-                        d.ci,
-                        isRatio ? `%${d.max}` : d.max,
-                        isRatio ? `%${d.min}` : d.min,
-                        isRatio ? `%${d.totalSum}` : d.totalSum
-                    );
-                    ws_data.push(r);
-                });
-            }
-            else {
-                let actMonths = []; 
-                if(q.compare) {
-                    for(let m=2; m<=APP.monthCount; m++) {
-                        if(q.data[0] && q.data[0].history && q.data[0].history[m] !== undefined) actMonths.push(m);
-                    }
-                }
-
-                if(q.type==='gen') {
-                    let h = ['Kategori', '1. Ay Değer', '1. Ay %'];
-                    actMonths.forEach(m => { h.push(`${m}. Ay Değer`); h.push(`${m}. Ay %`); h.push(`Fark(1-${m}) %`); });
-                    ws_data.push(h);
-
-                    q.data.forEach(d => {
-                        let r = [d.category, d.value, d.percent];
-                        actMonths.forEach(m => { 
-                            r.push(d.history[m].val); r.push(d.history[m].pct); 
-                            r.push(getPctArrowText(d.value, d.history[m].val)); 
-                        });
-                        ws_data.push(r);
-                    });
-
-                    let tr = ['GENEL TOPLAM', q.total, '100%'];
-                    actMonths.forEach(m => { 
-                        let ht = q.hTotals[m]||0; tr.push(ht); tr.push('100%'); 
-                        tr.push(getPctArrowText(q.total, ht)); 
-                    });
-                    ws_data.push(tr);
-
-                } else if(q.type==='rad') {
-                    let tType = q.tTypeOnly;
-                    let h = ['Branş','Doktor','1. Ay Havuz Hasta Sayısı','1. Ay Doktor Hasta Sayısı'];
-                    h.push(`1. Ay Dr. ${tType} Sayısı`); h.push('1. Ay %Dr'); h.push('1. Ay %Br');
-                    actMonths.forEach(m => { h.push(`${m}. Ay Dr. ${tType} Sayısı`); h.push(`Fark(1-${m}) %`); });
-                    ws_data.push(h);
-
-                    q.data.forEach(d => {
-                        let r = [d.brans, d.doktor, d.branchPool, d.total];
-                        r.push(d[tType]); r.push(d[tType+'P']); r.push(d[tType+'BrP']);
-                        actMonths.forEach(m => { 
-                            let hm = d.history[m]||{}; 
-                            let hVal = hm[tType]||0;
-                            r.push(hVal); 
-                            r.push(getPctArrowText(d[tType], hVal)); 
-                        });
-                        ws_data.push(r);
-                    });
-                } else if(q.type==='rep') {
-                    ws_data.push(['Anahtar', 'Tekrar', 'Hizmetler']);
-                    q.data.forEach(d => ws_data.push([d[0], d[1].count, q.srvCol?d[1].services.join(', '):'']));
-                }
-            }
-            let ws = XLSX.utils.aoa_to_sheet(ws_data);
-            XLSX.utils.book_append_sheet(wb, ws, `Rapor_${i+1}`);
+            let aoa = queueToAoa(q);
+            if (q.type === 'tbl' && q.notes) { aoa.push([]); q.notes.forEach(n => aoa.push([n])); }
+            let ws = XLSX.utils.aoa_to_sheet(aoa);
+            let nm = `${i + 1}_${String(q.title || 'Rapor').replace(/[\\\/?*\[\]:]/g, '').substring(0, 26)}`;
+            XLSX.utils.book_append_sheet(wb, ws, nm.substring(0, 31));
         });
-        XLSX.writeFile(wb, "Analiz_Raporu.xlsx");
+        XLSX.writeFile(wb, "SDS_Analiz_Raporu.xlsx");
     }
 
     function downloadPPT() {
@@ -2213,7 +2310,7 @@ function toggleAllCharts(type) {
             let currentYear = new Date().getFullYear();
             
             let coverSlide = pres.addSlide();
-            coverSlide.addText(`${monthLabels[2]?monthLabels[2].split(' ')[0].toUpperCase():''} - ${monthLabels[1].split(' ')[0].toUpperCase()} ${currentYear}\nSDS ANALİZ RAPORU`, {
+            coverSlide.addText(`${monthLabels[2]?monthLabels[2].split(' ')[0].toUpperCase():''} - ${monthLabels[1].split(' ')[0].toUpperCase()} ${currentYear}\nSDS ANALİZ RAPORU\n(Güncel SDS Rehberi – Standart 2 Görüntüleme)`, {
                 x: 0, y: '40%', w: '100%', h: 1.5, fontSize: 32, bold: true, color: '1e293b', align: 'center', valign: 'middle'
             });
 
@@ -2221,19 +2318,24 @@ function toggleAllCharts(type) {
                 let headers = [], rows = []; let totalRow = [];
                 let slideTitle = item.title;
 
-                if(item.type === 'stat') {
+                if(item.type === 'tbl') {
+                    headers = item.headers.map(String);
+                    item.rows.forEach(r => rows.push(r.map(c => (c === null || c === undefined) ? '-' : (typeof c === 'number' ? (Number.isInteger(c) ? String(c) : c.toFixed(1)) : c))));
+                    if (item.notes && item.notes.length) rows.push(['Not: ' + item.notes[0]].concat(new Array(Math.max(0, headers.length - 1)).fill('')));
+                }
+                else if(item.type === 'stat') {
                     const isRatio = item.focus === 'ratio';
-                    headers = ['Branş', 'Doktor'];
-                    item.validMonths.forEach(m => headers.push(`${monthLabels[m]}\n${isRatio ? '%' : 'Değer'}`));
+                    headers = ['Branş', 'Hekim'];
+                    item.validMonths.forEach(m => headers.push(`${monthLabels[m]}\n${isRatio ? '/100' : 'Değer'}`));
                     headers.push('Ortalama', 'S.Sapma', 'G.Aralığı');
                     
                     item.data.forEach(d => {
                         let r = [d.brans, d.doktor];
                         item.validMonths.forEach(m => {
                             let v = d.history[m] !== undefined ? d.history[m] : 0;
-                            r.push(isRatio ? `%${v}` : v);
+                            r.push(v);
                         });
-                        r.push(isRatio ? `%${d.avg}` : d.avg, isRatio ? `±%${d.sd}` : d.sd, d.ci);
+                        r.push(d.avg, `±${d.sd}`, d.ci);
                         rows.push(r);
                     });
                 }
@@ -2267,14 +2369,14 @@ function toggleAllCharts(type) {
                     } else if(item.type === 'rad') {
                         let tType = item.tTypeOnly;
                         
-                        headers = ['Branş', 'Doktor', 'Havuz\nSayısı', 'Doktor\nHasta'];
-                        headers.push(`${monthLabels[1].substring(0,3)} Dr.${tType}\nSayısı`); 
-                        headers.push('Dr\n%'); 
-                        headers.push('Br\n%'); 
+                        headers = ['Branş', 'Hekim', 'Branş\nMuayene', 'Hekim\nMuayene'];
+                        headers.push(`${monthLabels[1].substring(0,3)} Hekim ${tType}\nİstem`); 
+                        headers.push(`100 Muay.\n${tType}`); 
+                        headers.push('Br. Muay.\n×100'); 
                         
                         actMonths.forEach(m => { 
-                            headers.push(`${monthLabels[m].substring(0,3)} Dr.${tType}\nSayısı`); 
-                            headers.push(`Fark %`); 
+                            headers.push(`${monthLabels[m].substring(0,3)} Hekim ${tType}\nİstem`); 
+                            headers.push(`Değişim %`); 
                         });
                         
                         item.data.forEach(d => {
@@ -2310,7 +2412,7 @@ function toggleAllCharts(type) {
                     
                     let chunk = rows.slice(currentRow, currentRow + limit);
                     
-                    let fontS = headers.length > 8 ? 10 : 12;
+                    let fontS = headers.length > 12 ? 7 : (headers.length > 8 ? 9 : 12);
                     let tableData = [headers.map(h => ({text:h, options:{fill:'eeeeee', bold:true, fontSize:fontS}}))];
                     
                     chunk.forEach((r, idx) => { 
@@ -2341,20 +2443,436 @@ function toggleAllCharts(type) {
                     currentRow += limit; slideCount++;
                 }
             });
-            pres.writeFile({ fileName: "Analiz_Sunum_Multi.pptx" }).then(() => { console.log("PPT İndirme Başladı"); });
+            pres.writeFile({ fileName: "SDS_Analiz_Sunum.pptx" }).then(() => { console.log("PPT İndirme Başladı"); });
         } catch (e) { console.error(e); alert("Hata: " + e.message); }
     }
  
     function downloadWord() {
-        if(!confirm("Word İndir? (Çoklu Ay İçin Excel/PPT daha sağlıklıdır)")) return;
-        downloadExcel();
+        if (queue.length === 0) return alert("Kuyruk boş");
+        if (!confirm("Word (.doc) dosyası indirmek istiyor musunuz?")) return;
+        const esc = s => String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        let body = `<h1 style="font-family:Calibri;">SDS Analiz Raporu</h1><p style="font-family:Calibri; font-size:10pt;">Güncel SDS Uygulama Rehberi – Hastane (Sürüm 3) terminolojisine göre hazırlanmıştır. Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}</p>`;
+        queue.forEach(q => {
+            const aoa = queueToAoa(q);
+            body += `<h3 style="font-family:Calibri;">${esc(q.title)}</h3><table border="1" cellspacing="0" cellpadding="3" style="border-collapse:collapse; font-family:Calibri; font-size:9pt;">`;
+            aoa.forEach((r, i) => {
+                body += '<tr>' + r.map(c => i === 0 ? `<th style="background:#e2e8f0;">${esc(c)}</th>` : `<td>${esc(c)}</td>`).join('') + '</tr>';
+            });
+            body += '</table>';
+            if (q.notes) body += `<p style="font-family:Calibri; font-size:8pt; color:#555;">${q.notes.map(esc).join('<br>')}</p>`;
+        });
+        const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>SDS Analiz Raporu</title></head><body>${body}</body></html>`;
+        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'SDS_Analiz_Raporu.doc';
+        document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
     }
     
     function saveState(){ alert("Ayarlar Kaydedildi"); }
 </script>
+
+<script>
+/* ===== GÜNCEL SDS – Standart 2 (Görüntüleme) modülü ===== */
+const SDS_TYPES = ['MR', 'BT', 'USG'];
+const SDS_NOTE = 'Not: Yüksek değer otomatik uygunsuzluk veya DİF değildir; "Klinik inceleme önceliği" yalnızca incelemeye başlama işaretidir. Branş medyanı/ortalaması hedef değildir.';
+let SDS = { res: null, karar: {} };
+try { SDS.karar = JSON.parse(localStorage.getItem('sds_karar_v1') || '{}'); } catch (e) { SDS.karar = {}; }
+
+function sdsEl(id) { return document.getElementById(id); }
+function sdsNorm(s) { return getSafeStr(String(s == null ? '' : s).trim()).replace(/\s+/g, ' '); }
+function sdsBrKey(s) { return sdsNorm(s); }
+function sdsDrKey(s) { return getLastTwoWords(cleanDrName(s)); }
+function sdsType(v) {
+    let s = getSafeStr(v).replace(/\s+/g, ' ');
+    if (!s) return null;
+    if (s.includes('ultrason') || s.includes('doppler') || /\busg\b/.test(s)) return 'USG';
+    if (s.includes('tomografi') || /\bbt\b/.test(s)) return 'BT';
+    if (s.includes('rezonans') || /\bmr\b/.test(s) || s.includes('emar')) return 'MR';
+    return null;
+}
+function sdsFmt(v, d = 1) {
+    if (v === null || v === undefined || v === '' || (typeof v === 'number' && !isFinite(v))) return '-';
+    if (typeof v !== 'number') return v;
+    return v.toLocaleString('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function sdsInt(v) { return (v === null || v === undefined) ? '-' : Number(v).toLocaleString('tr-TR'); }
+function sdsMedian(a) {
+    if (!a.length) return null;
+    let s = [...a].sort((x, y) => x - y), m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function sdsRound(v, d = 1) { return (v === null || v === undefined || !isFinite(v)) ? null : Number(v.toFixed(d)); }
+
+/* ---------- Sütun eşleştirme ---------- */
+function sdsFill(id, headers, auto, multiple) {
+    const el = sdsEl(id); if (!el) return;
+    const cur = Array.from(el.selectedOptions).map(o => o.value);
+    el.innerHTML = (multiple ? '' : '<option value="">-- Yok / Otomatik --</option>') +
+        headers.map(h => `<option value="${String(h).replace(/"/g, '&quot;')}">${h}</option>`).join('');
+    let want = cur.filter(c => headers.includes(c));
+    if (!want.length && auto) want = Array.isArray(auto) ? auto : [auto];
+    Array.from(el.options).forEach(o => { if (want.includes(o.value)) o.selected = true; });
+}
+function sdsFind(headers, re, exclude) {
+    return headers.find(h => { let c = getSafeStr(h).replace(/\s+/g, ''); return re.test(c) && !(exclude && exclude.test(c)); });
+}
+function sdsPopulate(force) {
+    const pNew = Object.values(APP.months).find(m => m && !m.isOldFormat && m.data && m.data.length > 0);
+    const pOld = Object.values(APP.months).find(m => m && m.isOldFormat && m.data && m.data.length > 0);
+    sdsEl('sdsMapNew').style.display = pNew ? 'block' : 'none';
+    sdsEl('sdsMapOld').style.display = pOld ? 'block' : 'none';
+    sdsEl('sdsMapInfo').innerHTML = (pNew || pOld) ? '<span style="color:#16a34a;">✅ Sütunlar tarandı. Gerekirse aşağıdan değiştirin.</span>' : 'Önce Dosya Yönetimi sekmesinden veri yükleyin.';
+    if (pNew) {
+        const h = Object.keys(pNew.data[0]).filter(k => !k.startsWith('_') && !k.endsWith('_STD'));
+        sdsFill('sdsBrans', h, sdsFind(h, /islembrans|bransislem|brans|bolum/));
+        sdsFill('sdsDoktor', h, sdsFind(h, /islemdoktoru|hekimadi|doktoradi|hekim|doktor/));
+        sdsFill('sdsTur', h, sdsFind(h, /tetkikturu|teftisturu/) || sdsFind(h, /islemadi|hizmetadi/));
+        sdsFill('sdsAdet', h, sdsFind(h, /^adet$|^miktar$/));
+        sdsFill('sdsHasta', h, sdsFind(h, /protokol|hastano|hastaid|tckimlik|tcno|^tc$|dosyano/, /tur/));
+        const sh = (pNew.summaryData && pNew.summaryData.length) ? Object.keys(pNew.summaryData[0]) : [];
+        sdsFill('sdsSumBrDr', sh, sdsFind(sh, /bransvedoktor/));
+        sdsFill('sdsSumBrans', sh, sh.find(k => getSafeStr(k).trim() === 'brans'));
+        sdsFill('sdsSumMuayene', sh, null, true);
+    }
+    if (pOld) {
+        const h = Object.keys(pOld.data[0]).filter(k => !k.startsWith('_') && !k.endsWith('_STD'));
+        sdsFill('sdsOldBrans', h, sdsFind(h, /brans|bolum/));
+        sdsFill('sdsOldDoktor', h, sdsFind(h, /hekimadi|doktoradi|hekim|doktor/));
+        sdsFill('sdsOldUSG', h, sdsFind(h, /usg|ultrason|doppler/));
+        sdsFill('sdsOldMR', h, sdsFind(h, /mr|rezonans|emar/));
+        sdsFill('sdsOldBT', h, sdsFind(h, /tomografi|bt/));
+        sdsFill('sdsOldMuayene', h, sdsFind(h, /muayene|basvuran|hastasayi/));
+    }
+    sdsRenderPeriods();
+}
+function sdsRenderPeriods() {
+    const build = (box, kind, defIdx) => {
+        const el = sdsEl(box); if (!el) return;
+        const keep = Array.from(el.querySelectorAll('input:checked')).map(i => parseInt(i.value));
+        const hadAny = el.children.length > 0;
+        let html = '';
+        for (let i = 1; i <= APP.monthCount; i++) {
+            const p = APP.months[i]; const ok = p && p.data && p.data.length > 0;
+            const lbl = sdsEl('lblM' + i) ? sdsEl('lblM' + i).value : i + '. Ay';
+            const chk = hadAny ? keep.includes(i) : (ok && i === defIdx);
+            html += `<label style="display:inline-flex; align-items:center; gap:4px; margin:0; ${ok ? '' : 'opacity:.4;'}"><input type="checkbox" style="width:auto; margin:0;" value="${i}" ${ok ? '' : 'disabled'} ${chk && ok ? 'checked' : ''}> ${lbl}</label>`;
+        }
+        el.innerHTML = html;
+    };
+    build('sdsCurMonths', 'cur', 1);
+    build('sdsPrevMonths', 'prev', 2);
+}
+function sdsChecked(id) { return Array.from(sdsEl(id).querySelectorAll('input:checked')).map(i => parseInt(i.value)); }
+function sdsSel(id) { const e = sdsEl(id); return e ? e.value : ''; }
+function sdsPeriodName(ids, inputId) {
+    const v = sdsEl(inputId).value.trim(); if (v) return v;
+    return ids.map(i => sdsEl('lblM' + i) ? sdsEl('lblM' + i).value : i + '. Ay').join(' + ');
+}
+
+/* ---------- Veri toplama (ay bazında) ---------- */
+function sdsNewDoc(br, dr) {
+    const mk = () => ({ n: 0, pts: new Set() });
+    return { brans: br, doktor: cleanDrName(dr), mu: 0, t: { MR: mk(), BT: mk(), USG: mk() }, all: new Set(), rowBased: false, hastaOk: false, rowHasta: 0 };
+}
+function sdsCollectMonth(mIdx) {
+    const p = APP.months[mIdx];
+    if (!p || !p.data || !p.data.length) return null;
+    const out = {};
+    const get = (br, dr) => { const k = sdsBrKey(br) + '||' + sdsDrKey(dr); return out[k] || (out[k] = sdsNewDoc(br, dr)); };
+    const rows = p.filtered || p.data;
+
+    if (!p.isOldFormat) {
+        const cB = sdsSel('sdsBrans'), cD = sdsSel('sdsDoktor'), cT = sdsSel('sdsTur'), cA = sdsSel('sdsAdet'), cH = sdsSel('sdsHasta');
+        for (let i = 0; i < rows.length; i++) {
+            const r = rows[i];
+            let type = sdsType(cT ? r[cT] : '') || sdsType(r['Tetkik Türü_STD']);
+            if (!type) continue;
+            let n = 1;
+            if (cA) { const v = parseFloat(r[cA]); n = (isFinite(v) && v > 0) ? v : 1; }
+            const o = get(String(r[cB] || 'Bilinmiyor').trim(), r[cD]);
+            o.t[type].n += n;
+            if (cH) { const id = String(r[cH] || '').trim(); if (id) { o.t[type].pts.add(id); o.all.add(id); o.hastaOk = true; } }
+        }
+        // Muayene sayıları (özet sayfası)
+        const sd = p.summaryData || [];
+        if (sd.length) {
+            const keys = Object.keys(sd[0]);
+            const cBD = sdsSel('sdsSumBrDr') || keys.find(k => getSafeStr(k).replace(/\s+/g, '').includes('bransvedoktor'));
+            const cBr = sdsSel('sdsSumBrans') || keys.find(k => getSafeStr(k).trim() === 'brans');
+            const manual = Array.from(sdsEl('sdsSumMuayene').selectedOptions).map(o => o.value);
+            let cols = manual;
+            if (!cols.length) {
+                const kPoli = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('poliklinik') && c.includes('hasta'); });
+                const kAcil = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return c.includes('acil') && c.includes('hasta'); });
+                const kKlin = keys.find(k => { const c = getSafeStr(k).replace(/\s+/g, ''); return (c.includes('klinik') && c.includes('hasta') && !c.includes('poli')) || c.includes('doktorunyatirdigi') || c.includes('servisteyatan'); });
+                const f = APP.globalBirimFilter;
+                if (f === 'Poliklinik') cols = [kPoli]; else if (f === 'Acil') cols = [kAcil]; else if (f === 'Klinik') cols = [kKlin];
+                else cols = [kPoli, kAcil, kKlin];
+                cols = cols.filter(Boolean);
+            }
+            if (cBD) {
+                sd.forEach(sr => {
+                    const brDr = String(sr[cBD] || '').toUpperCase();
+                    if (!brDr || brDr.endsWith('TOPLAM') || !brDr.includes('-')) return;
+                    const brName = String((cBr && sr[cBr]) || brDr.substring(0, brDr.indexOf('-'))).trim();
+                    const drName = brDr.substring(brDr.indexOf('-') + 1).trim();
+                    let mu = 0; cols.forEach(c => { mu += parseFloat(sr[c]) || 0; });
+                    const exact = sdsBrKey(brName) + '||' + sdsDrKey(drName);
+                    let k = out[exact] ? exact : Object.keys(out).find(x => x.split('||')[1] === sdsDrKey(drName));
+                    if (!k) { get(brName, drName); k = exact; }
+                    out[k].mu += mu;
+                });
+            }
+        }
+    } else {
+        const cB = sdsSel('sdsOldBrans'), cD = sdsSel('sdsOldDoktor');
+        const col = { USG: sdsSel('sdsOldUSG'), MR: sdsSel('sdsOldMR'), BT: sdsSel('sdsOldBT') };
+        const cM = sdsSel('sdsOldMuayene');
+        for (let i = 0; i < rows.length; i++) {
+            const r = rows[i];
+            const o = get(String(r[cB] || 'Bilinmiyor').trim(), r[cD]);
+            let any = false;
+            SDS_TYPES.forEach(t => { if (col[t]) { const v = customAgg(r[col[t]], 'sum'); if (v > 0) { o.t[t].n += v; any = true; } } });
+            if (cM) { o.mu += parseFloat(r[cM]) || 0; }
+            else { o.mu += 1; o.rowBased = true; if (any) o.rowHasta++; }
+        }
+    }
+    return out;
+}
+function sdsAggregate(months) {
+    const docs = {};
+    months.forEach(m => {
+        const c = sdsCollectMonth(m); if (!c) return;
+        Object.keys(c).forEach(k => {
+            const s = c[k];
+            if (!docs[k]) docs[k] = sdsNewDoc(s.brans, s.doktor);
+            const d = docs[k];
+            d.mu += s.mu; d.rowBased = d.rowBased || s.rowBased; d.rowHasta += s.rowHasta;
+            d.hastaOk = d.hastaOk || s.hastaOk;
+            SDS_TYPES.forEach(t => { d.t[t].n += s.t[t].n; s.t[t].pts.forEach(x => d.t[t].pts.add(x)); });
+            s.all.forEach(x => d.all.add(x));
+        });
+    });
+    return docs;
+}
+
+/* ---------- Metrikler ---------- */
+function sdsN(d, T) { return T === 'TOPLAM' ? SDS_TYPES.reduce((a, t) => a + d.t[t].n, 0) : d.t[T].n; }
+function sdsPts(d, T) {
+    if (d.hastaOk) return T === 'TOPLAM' ? d.all.size : d.t[T].pts.size;
+    if (d.rowBased && T === 'TOPLAM') return d.rowHasta;
+    return null;
+}
+function sdsPer100(n, mu) { return mu > 0 ? n / mu * 100 : null; }
+function sdsGroupByBranch(docs) {
+    const g = {};
+    Object.values(docs).forEach(d => { const k = sdsBrKey(d.brans); (g[k] = g[k] || { brans: d.brans, docs: [] }).docs.push(d); });
+    return g;
+}
+function sdsBranchTotals(g, T) {
+    let mu = 0, n = 0, pts = 0, ptsOk = true;
+    g.docs.forEach(d => { mu += d.mu; n += sdsN(d, T); const p = sdsPts(d, T); if (p === null) ptsOk = false; else pts += p; });
+    return { mu, n, pts: ptsOk ? pts : null, per100: sdsPer100(n, mu) };
+}
+
+/* ---------- Çalıştır ---------- */
+function sdsRun() {
+    const cur = sdsChecked('sdsCurMonths'), prev = sdsChecked('sdsPrevMonths');
+    if (!cur.length) { alert('Güncel dönem için en az bir ay işaretleyin (ay verisi yüklü olmalı).'); return; }
+    if (!Object.values(APP.months).some(m => m && m.data && m.data.length)) { alert('Önce veri yükleyin.'); return; }
+    const ov = sdsEl('loadingOverlay'); const tx = sdsEl('loadingText');
+    if (tx) tx.innerText = 'Güncel SDS analizi hesaplanıyor...';
+    ov.style.display = 'flex';
+    setTimeout(() => {
+        try {
+            const minMu = parseInt(sdsEl('sdsMinMu').value) || 30;
+            const esik = parseFloat(sdsEl('sdsEsik').value); const esikV = isFinite(esik) ? esik : 50;
+            const curDocs = sdsAggregate(cur);
+            const prevDocs = prev.length ? sdsAggregate(prev) : null;
+            SDS.res = {
+                curName: sdsPeriodName(cur, 'sdsCurName'), prevName: prev.length ? sdsPeriodName(prev, 'sdsPrevName') : null,
+                scope: APP.globalBirimFilter !== 'Tümü' ? APP.globalBirimFilter : 'Tüm Birimler',
+                minMu, esik: esikV, cur: curDocs, prev: prevDocs, hasPrev: !!prevDocs, flagged: []
+            };
+            if (!Object.keys(curDocs).length) { alert('Seçilen aylarda sütun eşleştirmesine uygun veri bulunamadı. Sütun eşleştirmesini kontrol edin.'); return; }
+            sdsRenderBrans(); sdsRenderHekim(); sdsRenderKarar();
+            sdsEl('sdsResults').style.display = 'block';
+            sdsSub('brans');
+        } catch (e) { console.error(e); alert('Hata: ' + e.message); }
+        finally { ov.style.display = 'none'; if (tx) tx.innerText = 'Filtre değişimi uygulanıyor, lütfen bekleyiniz...'; }
+    }, 40);
+}
+function sdsSub(name) {
+    ['brans', 'hekim', 'karar'].forEach(n => {
+        sdsEl('sdsPane_' + n).style.display = n === name ? 'block' : 'none';
+        sdsEl('sdsTabBtn_' + n).className = n === name ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+    });
+}
+function sdsTableHtml(headers, rows, opts = {}) {
+    let h = '<div class="table-wrapper"><table><thead><tr>' + headers.map(x => `<th>${x}</th>`).join('') + '</tr></thead><tbody>';
+    rows.forEach(r => {
+        const cls = r._cls || '';
+        h += `<tr class="${cls}">` + r.cells.map((c, i) => {
+            let txt = typeof c === 'number' ? sdsFmt(c, (opts.ints && opts.ints.includes(i)) ? 0 : 1) : (c === null || c === undefined ? '-' : c);
+            if (opts.status === i) {
+                const bg = String(c).startsWith('Klinik inceleme') ? '#fef3c7;color:#92400e' : (String(c).startsWith('Rutin') ? '#dcfce7;color:#166534' : '#e2e8f0;color:#475569');
+                return `<td><span style="background:${bg}; padding:2px 8px; border-radius:10px; font-weight:bold; white-space:nowrap;">${txt}</span></td>`;
+            }
+            return `<td>${txt}</td>`;
+        }).join('') + '</tr>';
+    });
+    return h + '</tbody></table></div>';
+}
+
+/* ---------- BRANŞ ---------- */
+function sdsRenderBrans() {
+    const R = SDS.res; const gc = sdsGroupByBranch(R.cur); const gp = R.prev ? sdsGroupByBranch(R.prev) : null;
+    const headers = ['Branş', 'Hekim Sayısı', 'Muayene Sayısı'];
+    SDS_TYPES.forEach(t => headers.push(`${t} İstem Sayısı`, `100 Muayenede ${t} İstem`));
+    headers.push('Görüntüleme Toplam İstem', '100 Muayenede Toplam İstem', 'İstenen Hasta Oranı (%)', 'Hekimler Arası Medyan (100 Muay.) *');
+    if (R.hasPrev) headers.push(`Önceki Dönem 100 Muayenede Toplam`, 'Değişim (/100)');
+    const rows = [];
+    let H = { mu: 0, n: { MR: 0, BT: 0, USG: 0, TOPLAM: 0 }, pts: 0, ptsOk: true, nd: 0 };
+    Object.keys(gc).sort().forEach(k => {
+        const g = gc[k]; const tot = {}; ['MR', 'BT', 'USG', 'TOPLAM'].forEach(t => tot[t] = sdsBranchTotals(g, t));
+        const meds = g.docs.filter(d => d.mu >= R.minMu).map(d => sdsPer100(sdsN(d, 'TOPLAM'), d.mu));
+        const nd = g.docs.filter(d => d.mu > 0).length;
+        const cells = [g.brans, nd, tot.TOPLAM.mu];
+        SDS_TYPES.forEach(t => cells.push(tot[t].n, sdsRound(tot[t].per100)));
+        cells.push(tot.TOPLAM.n, sdsRound(tot.TOPLAM.per100), tot.TOPLAM.pts === null ? null : sdsRound(sdsPer100(tot.TOPLAM.pts, tot.TOPLAM.mu)), sdsRound(sdsMedian(meds)));
+        if (R.hasPrev) {
+            const pg = gp[k]; const pt = pg ? sdsBranchTotals(pg, 'TOPLAM') : null;
+            cells.push(pt ? sdsRound(pt.per100) : null, (pt && pt.per100 !== null && tot.TOPLAM.per100 !== null) ? sdsRound(tot.TOPLAM.per100 - pt.per100) : null);
+        }
+        rows.push({ cells });
+        H.mu += tot.TOPLAM.mu; ['MR', 'BT', 'USG', 'TOPLAM'].forEach(t => H.n[t] += tot[t].n); H.nd += nd;
+        if (tot.TOPLAM.pts === null) H.ptsOk = false; else H.pts += tot.TOPLAM.pts;
+    });
+    const hc = ['HASTANE TOPLAMI', H.nd, H.mu];
+    SDS_TYPES.forEach(t => hc.push(H.n[t], sdsRound(sdsPer100(H.n[t], H.mu))));
+    hc.push(H.n.TOPLAM, sdsRound(sdsPer100(H.n.TOPLAM, H.mu)), H.ptsOk ? sdsRound(sdsPer100(H.pts, H.mu)) : null, null);
+    if (R.hasPrev) {
+        let pm = 0, pn = 0; Object.values(gp).forEach(g => { const t = sdsBranchTotals(g, 'TOPLAM'); pm += t.mu; pn += t.n; });
+        const pv = sdsPer100(pn, pm); const cv = sdsPer100(H.n.TOPLAM, H.mu);
+        hc.push(sdsRound(pv), (pv !== null && cv !== null) ? sdsRound(cv - pv) : null);
+    }
+    rows.push({ cells: hc, _cls: 'row-total' });
+    const ints = [1, 2, 3, 5, 7, 9];
+    const notes = ['* Branş içindeki hekimlerin (min. muayene şartını sağlayanların) 100 muayenede istem medyanıdır; bilgi amaçlıdır, hedef değildir.',
+        'Branş ve hastane toplamları toplam sayılardan hesaplanmıştır (hekim oranlarının ortalaması alınmamıştır). Branşlar arası karşılaştırma betimseldir.',
+        '100 muayenede istem = istem sayısı ÷ muayene sayısı × 100 (yüzde değildir). ' + SDS_NOTE];
+    SDS.brans = { title: `Standart 2 Görüntüleme – Branş Bazlı 100 Muayenede İstem (${R.scope}; ${R.curName})`, headers, rows: rows.map(r => r.cells), notes };
+    sdsEl('sdsPane_brans').innerHTML = `<h4 style="margin:0 0 6px;">${SDS.brans.title}</h4>` + sdsTableHtml(headers, rows, { ints }) +
+        `<div style="font-size:0.8rem; color:#64748b;">${notes.join('<br>')}</div>`;
+}
+
+/* ---------- HEKİM ---------- */
+function sdsDoctorRows(T) {
+    const R = SDS.res; const gc = sdsGroupByBranch(R.cur); const pdocs = R.prev || {};
+    const out = [];
+    Object.keys(gc).sort().forEach(bk => {
+        const g = gc[bk]; const tot = sdsBranchTotals(g, T);
+        const meds = g.docs.filter(d => d.mu >= R.minMu).map(d => sdsPer100(sdsN(d, T), d.mu));
+        const med = sdsMedian(meds);
+        const list = [...g.docs].filter(d => d.mu > 0 || sdsN(d, T) > 0).sort((a, b) => (sdsPer100(sdsN(b, T), b.mu) || 0) - (sdsPer100(sdsN(a, T), a.mu) || 0));
+        list.forEach(d => {
+            const n = sdsN(d, T); const v = sdsPer100(n, d.mu);
+            const oMu = tot.mu - d.mu, oN = tot.n - n;
+            const others = (g.docs.length > 1 && oMu > 0) ? oN / oMu * 100 : null;
+            const fark = (v !== null && others !== null) ? v - others : null;
+            const farkPct = (fark !== null && others > 0) ? fark / others * 100 : null;
+            let durum;
+            if (d.mu <= 0) durum = 'Muayene verisi yok';
+            else if (d.mu < R.minMu) durum = `Yetersiz örneklem (<${R.minMu} muayene)`;
+            else if (others === null) durum = 'Karşılaştırma yok (tek hekim)';
+            else if (fark > 0 && (others === 0 || farkPct >= R.esik)) durum = 'Klinik inceleme önceliği';
+            else durum = 'Rutin izlem';
+            const pd = pdocs[sdsBrKey(d.brans) + '||' + sdsDrKey(d.doktor)];
+            const pv = pd ? sdsPer100(sdsN(pd, T), pd.mu) : null;
+            const pts = sdsPts(d, T);
+            out.push({ d, T, brans: d.brans, doktor: d.doktor, mu: d.mu, n, v, pts: pts === null ? null : sdsPer100(pts, d.mu), med, others, fark, farkPct, pv, chg: (pv !== null && v !== null) ? v - pv : null, durum });
+        });
+    });
+    return out;
+}
+function sdsRenderHekim() {
+    const R = SDS.res; R.flagged = [];
+    SDS.hekim = [];
+    let html = '';
+    ['MR', 'BT', 'USG', 'TOPLAM'].forEach(T => {
+        const rows = sdsDoctorRows(T);
+        const label = T === 'TOPLAM' ? 'Görüntüleme Toplam' : T;
+        const headers = ['Branş', 'Hekim', 'Muayene Sayısı', `${label} İstem Sayısı`, `100 Muayenede ${label} İstem`, 'İstenen Hasta Oranı (%)', 'Branş İçi Hekim Medyanı *', 'Diğer Hekimlerin Oranı (/100)', 'Fark (/100)', 'Fark (%)'];
+        if (R.hasPrev) headers.push('Önceki Dönem (/100)', 'Değişim (/100)');
+        headers.push('Durum');
+        const cells = rows.map(r => {
+            const c = [r.brans, r.doktor, r.mu, r.n, sdsRound(r.v), sdsRound(r.pts), sdsRound(r.med), sdsRound(r.others), sdsRound(r.fark), sdsRound(r.farkPct)];
+            if (R.hasPrev) c.push(sdsRound(r.pv), sdsRound(r.chg));
+            c.push(r.durum);
+            if (r.durum.startsWith('Klinik inceleme')) R.flagged.push(r);
+            return c;
+        });
+        const statusIdx = headers.length - 1;
+        const title = `Standart 2 Görüntüleme – Hekim Bazlı ${label} (${R.scope}; ${R.curName})`;
+        const notes = ['"Diğer hekimlerin oranı": aynı branştaki diğer hekimlerin birleşik (toplam istem ÷ toplam muayene × 100) oranıdır. Branş medyanı * bilgi amaçlıdır, hedef değildir.',
+            `Klinik inceleme önceliği: hekim oranı diğer hekimlerden en az %${R.esik} yüksek ve en az ${R.minMu} muayene (kurum içi eşik). ` + SDS_NOTE];
+        SDS.hekim.push({ title, headers, rows: cells, notes });
+        html += `<h4 style="margin:14px 0 6px;">${title}</h4>` + sdsTableHtml(headers, cells.map(c => ({ cells: c })), { status: statusIdx, ints: [2, 3] });
+    });
+    html += `<div style="font-size:0.8rem; color:#64748b;">${SDS.hekim[0].notes.join('<br>')}</div>`;
+    sdsEl('sdsPane_hekim').innerHTML = html;
+}
+
+/* ---------- KARAR ---------- */
+function sdsKKey(r) { return [SDS.res.curName, r.brans, r.doktor, r.T].join('|'); }
+function sdsKararSave(el) {
+    const k = decodeURIComponent(el.dataset.k), f = el.dataset.f;
+    SDS.karar[k] = SDS.karar[k] || {}; SDS.karar[k][f] = el.value;
+    try { localStorage.setItem('sds_karar_v1', JSON.stringify(SDS.karar)); } catch (e) { }
+}
+function sdsRenderKarar() {
+    const R = SDS.res; const fl = R.flagged;
+    let h = `<div style="background:#fffbeb; border:1px solid #fde68a; padding:10px; border-radius:6px; font-size:0.85rem; margin-bottom:10px; color:#92400e;">
+        <b>Karar akışı:</b> 1) Klinik uygunluk değerlendirmesi → 2) Gerekirse ek inceleme → 3) <u>Doğrulanmış</u> uygunsuzluk varsa DİF (sorumlu, termin, etkinlik için yeniden ölçüm).<br>
+        Aşağıdaki liste yalnızca "Klinik inceleme önceliği" olan hekimleri gösterir; bunlar <b>uygunsuzluk değildir</b>. Seçimleriniz tarayıcıda saklanır. Çeyrek toplantısı: dönemi izleyen ayın ilk 15 günü içinde başhekim.</div>`;
+    const opts = ['', 'Klinik olarak uygun', 'Ek inceleme gerekli', 'Doğrulanmış uygunsuzluk – DİF açılacak'];
+    const headers = ['Branş', 'Hekim', 'Tetkik', '100 Muayenede İstem', 'Diğer Hekimler (/100)', 'Fark (%)', 'Karar', 'Sorumlu', 'Termin', 'Not'];
+    SDS.kararHeaders = headers;
+    if (!fl.length) h += '<em style="color:#64748b;">Bu dönemde klinik inceleme önceliği olan hekim bulunmadı.</em>';
+    else {
+        h += '<div class="table-wrapper"><table><thead><tr>' + headers.map(x => `<th>${x}</th>`).join('') + '</tr></thead><tbody>';
+        fl.forEach(r => {
+            const k = encodeURIComponent(sdsKKey(r)); const s = SDS.karar[sdsKKey(r)] || {};
+            const inp = (f, w) => `<input type="text" style="margin:0; min-width:${w}px;" data-k="${k}" data-f="${f}" value="${(s[f] || '').replace(/"/g, '&quot;')}" onchange="sdsKararSave(this)">`;
+            h += `<tr><td>${r.brans}</td><td>${r.doktor}</td><td>${r.T === 'TOPLAM' ? 'Toplam' : r.T}</td><td>${sdsFmt(r.v)}</td><td>${sdsFmt(r.others)}</td><td>${sdsFmt(r.farkPct)}</td>
+                <td><select style="margin:0;" data-k="${k}" data-f="karar" onchange="sdsKararSave(this)">${opts.map(o => `<option ${s.karar === o ? 'selected' : ''}>${o}</option>`).join('')}</select></td>
+                <td>${inp('sorumlu', 110)}</td><td><input type="date" style="margin:0;" data-k="${k}" data-f="termin" value="${s.termin || ''}" onchange="sdsKararSave(this)"></td><td>${inp('not', 160)}</td></tr>`;
+        });
+        h += '</tbody></table></div>';
+    }
+    sdsEl('sdsPane_karar').innerHTML = h;
+}
+function sdsKararTable() {
+    const R = SDS.res;
+    return {
+        title: `Standart 2 Görüntüleme – Karar Tablosu (${R.scope}; ${R.curName})`,
+        headers: SDS.kararHeaders,
+        rows: R.flagged.map(r => { const s = SDS.karar[sdsKKey(r)] || {}; return [r.brans, r.doktor, r.T === 'TOPLAM' ? 'Toplam' : r.T, sdsRound(r.v), sdsRound(r.others), sdsRound(r.farkPct), s.karar || 'Bekliyor', s.sorumlu || '', s.termin || '', s.not || '']; }),
+        notes: ['Akış: klinik uygunluk → ek inceleme → doğrulanmış uygunsuzluk ise DİF. ' + SDS_NOTE]
+    };
+}
+
+/* ---------- Rapora ekle ---------- */
+function sdsAddQueue() {
+    if (!SDS.res) { alert('Önce analizi çalıştırın.'); return; }
+    const items = [SDS.brans, ...SDS.hekim, sdsKararTable()];
+    items.forEach(it => queue.push({ type: 'tbl', title: it.title, headers: it.headers, rows: it.rows, notes: it.notes }));
+    renderQueue();
+    alert(`${items.length} tablo rapora eklendi. "Sunum & Çıktı" sekmesinden Excel / Word / PPT indirebilirsiniz.`);
+}
+</script>
 <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column; backdrop-filter: blur(2px);">
     <div style="font-size:3rem; margin-bottom:15px; animation: spin 1s linear infinite;">⏳</div>
-    <div style="font-size:1.2rem; font-weight:bold; color:var(--primary); background:white; padding:10px 20px; border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+    <div id="loadingText" style="font-size:1.2rem; font-weight:bold; color:var(--primary); background:white; padding:10px 20px; border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
         Filtre değişimi uygulanıyor, lütfen bekleyiniz...
     </div>
 </div>

@@ -804,7 +804,11 @@
         document.getElementById(tabId).classList.add('active');
         const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
         if(btn) btn.classList.add('active');
-        if(tabId === 'tab-data') loadSheetData(); 
+        if(tabId === 'tab-data') {
+            const p = APP.months[APP.activePeriod];
+            if (p && p.data && p.data.length > 0) renderTable();
+            else loadSheetData();
+        } 
     }
  
     function setupMonthZones() {
@@ -1005,6 +1009,44 @@
         reader.readAsArrayBuffer(fileObj);
     }
 
+    function syncAllBirimFilters() {
+        const sel = document.getElementById('globalBirimFilter');
+        if (sel) APP.globalBirimFilter = sel.value;
+        for (let i = 1; i <= 12; i++) {
+            let p = APP.months[i];
+            if (p && p.data && p.data.length > 0) {
+                if (!p.isOldFormat) {
+                    let hastaCol = Object.keys(p.data[0]).find(k => {
+                        let clean = getSafeStr(k).replace(/[\s_]+/g, '');
+                        return clean.includes('hastatur') || clean.includes('birimtipi') || clean.includes('gelisturu') || clean.includes('basvuruturu');
+                    });
+                    if (hastaCol) {
+                        let allVals = [...new Set(p.data.map(r => String(r[hastaCol])))];
+                        if (APP.globalBirimFilter === 'Poliklinik') {
+                            p.filters[hastaCol] = allVals.filter(v => {
+                                let cv = getSafeStr(v);
+                                return cv.includes('poli') || cv.includes('ayaktan') || cv.includes('2.1');
+                            });
+                        } else if (APP.globalBirimFilter === 'Acil') {
+                            p.filters[hastaCol] = allVals.filter(v => {
+                                let cv = getSafeStr(v);
+                                return cv.includes('acil') || cv.includes('2.2');
+                            });
+                        } else if (APP.globalBirimFilter === 'Klinik') {
+                            p.filters[hastaCol] = allVals.filter(v => {
+                                let cv = getSafeStr(v);
+                                return cv.includes('yatan') || (cv.includes('klin') && !cv.includes('poli')) || cv.includes('2.3');
+                            });
+                        } else {
+                            delete p.filters[hastaCol];
+                        }
+                    }
+                }
+                applyInternalFilters(p);
+            }
+        }
+    }
+
     function applyGlobalFilters() {
         const _t = document.getElementById('loadingText'); if (_t) _t.innerText = 'Filtre değişimi uygulanıyor, lütfen bekleyiniz...';
         document.getElementById('loadingOverlay').style.display = 'flex';
@@ -1036,41 +1078,7 @@
                 }
             }
 
-            for(let i=1; i<=12; i++) {
-                let p = APP.months[i];
-                if(p && p.data && p.data.length > 0) {
-                    if (!p.isOldFormat) {
-                        let hastaCol = Object.keys(p.data[0]).find(k => {
-                            let clean = getSafeStr(k).replace(/[\s_]+/g, '');
-                            return clean.includes('hastatur') || clean.includes('birimtipi') || clean.includes('gelisturu') || clean.includes('basvuruturu');
-                        });
-
-                        if (hastaCol) {
-                            let allVals = [...new Set(p.data.map(r => String(r[hastaCol])))];
-                            
-                            if (APP.globalBirimFilter === 'Poliklinik') {
-                                p.filters[hastaCol] = allVals.filter(v => {
-                                    let cv = getSafeStr(v);
-                                    return cv.includes('poli') || cv.includes('ayaktan') || cv.includes('2.1');
-                                });
-                            } else if (APP.globalBirimFilter === 'Acil') {
-                                p.filters[hastaCol] = allVals.filter(v => {
-                                    let cv = getSafeStr(v);
-                                    return cv.includes('acil') || cv.includes('2.2');
-                                });
-                            } else if (APP.globalBirimFilter === 'Klinik') {
-                                p.filters[hastaCol] = allVals.filter(v => {
-                                    let cv = getSafeStr(v);
-                                    return cv.includes('yatan') || (cv.includes('klin') && !cv.includes('poli')) || cv.includes('2.3');
-                                });
-                            } else {
-                                delete p.filters[hastaCol];
-                            }
-                        }
-                    }
-                    applyInternalFilters(p);
-                }
-            }
+            syncAllBirimFilters();
             
             renderTable();
             updateTetkikList();
@@ -1571,6 +1579,7 @@
     }
  
     function runGeneralAnalysis() {
+        syncAllBirimFilters();
         const op = document.getElementById('anlOp').value;
         const limit = parseInt(document.getElementById('anlLimit').value) || 0;
         const compare = document.getElementById('chkCompareGeneral').checked;
@@ -1806,6 +1815,7 @@
 
  
     function runRadiologyAllInOne() {
+        syncAllBirimFilters();
         const cols = { 
             brans: document.getElementById('mapBrans').value, 
             dr: document.getElementById('mapDoktor').value,
@@ -1896,6 +1906,7 @@
  
     // --- İSTATİSTİKSEL ANALİZ GÜNCELLEMESİ (Tetkik/Hasta % Desteği ile) ---
     function runStatisticalAnalysis(runAll = false) {
+        syncAllBirimFilters();
         const cols = {
             brans: document.getElementById('statMapBrans').value,
             dr: document.getElementById('statMapDoktor').value,
@@ -2255,6 +2266,7 @@
     }
  
     function runRepeated() {
+        syncAllBirimFilters();
         let p1 = APP.months[1];
         if(!p1 || p1.filtered.length === 0) { showToast("1. Ay için veri yok."); return; }
  
@@ -2831,16 +2843,20 @@ function sdsCollectMonth(mIdx) {
             }
             cols = cols.filter(Boolean);
             if (cBD) {
+                const allowedBranches = new Set(Object.values(out).map(d => sdsBrKey(d.brans)));
+                const hasManualDocFilter = cD && p.filters && Array.isArray(p.filters[cD]);
                 sd.forEach(sr => {
                     const brDr = String(sr[cBD] || '').toUpperCase();
                     if (!brDr || brDr.endsWith('TOPLAM') || !brDr.includes('-')) return;
                     const brName = String((cBr && sr[cBr]) || brDr.substring(0, brDr.indexOf('-'))).trim();
                     const drName = brDr.substring(brDr.indexOf('-') + 1).trim();
                     let mu = 0; cols.forEach(c => { mu += parseFloat(sr[c]) || 0; });
-                    const exact = sdsBrKey(brName) + '||' + sdsDrKey(drName);
-                    let k = out[exact] ? exact : Object.keys(out).find(x => x.split('||')[1] === sdsDrKey(drName));
+                    const brKey = sdsBrKey(brName);
+                    const drKey = sdsDrKey(drName);
+                    const exact = brKey + '||' + drKey;
+                    let k = out[exact] ? exact : Object.keys(out).find(x => x.split('||')[0] === brKey && x.split('||')[1] === drKey);
                     if (!k) {
-                        if (mu <= 0) return;
+                        if (mu <= 0 || !allowedBranches.has(brKey) || hasManualDocFilter) return;
                         get(brName, drName); k = exact;
                     }
                     out[k].mu += mu;
@@ -2908,6 +2924,7 @@ function sdsOnTypeChange() {
     sdsRenderBrans(); sdsRenderHekim(); sdsRenderKarar();
 }
 function sdsRunCore() {
+    syncAllBirimFilters();
     const cur = sdsChecked('sdsCurMonths'), prev = sdsChecked('sdsPrevMonths');
     if (!cur.length) return false;
     const minMu = parseInt(sdsEl('sdsMinMu').value) || 30;
